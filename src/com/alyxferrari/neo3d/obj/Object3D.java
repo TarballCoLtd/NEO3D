@@ -57,6 +57,9 @@ public class Object3D {
 	 * @return The Object3D on which this method was called.
 	 */
 	public Object3D setPolygon(Polygon3D polygon, int index) {
+		if (polygons == null) {
+			throw new NullPointerException("This object's polygon array is currently null.");
+		}
 		if (polygon == null) {
 			throw new IllegalArgumentException("The polygon must not be null.");
 		}

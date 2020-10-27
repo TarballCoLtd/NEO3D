@@ -62,6 +62,9 @@ public class Polygon3D {
 	 * @return The Polygon3D on which this method was called.
 	 */
 	public Polygon3D setVertex(Vector3D vertex, int index) {
+		if (vertices == null) {
+			throw new NullPointerException("This polygon's vertex array is currently null.");
+		}
 		if (vertex == null) {
 			throw new IllegalArgumentException("The vertex must not be null.");
 		}

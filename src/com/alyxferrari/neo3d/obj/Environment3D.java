@@ -8,6 +8,9 @@ public class Environment3D {
 	/** List of objects in this environment.
 	 */
 	protected Object3D[] objects;
+	public Environment3D() {
+		this.objects = null;
+	}
 	/** Constructs a new environment with the specified objects.
 	 * @param objects The objects with which to construct this environment.
 	 */
@@ -26,6 +29,9 @@ public class Environment3D {
 	 * @return This environment's objects.
 	 */
 	public Object3D[] getObjects() {
+		if (objects == null) {
+			return null;
+		}
 		return Arrays.copyOf(objects, objects.length);
 	}
 	/**
@@ -33,6 +39,9 @@ public class Environment3D {
 	 * @return The {@code index}-th object in this environment.
 	 */
 	public Object3D getObject(int index) {
+		if (objects == null) {
+			return null;
+		}
 		return objects[index];
 	}
 	/** Sets this environment's object.
@@ -57,6 +66,9 @@ public class Environment3D {
 	 * @return The Environment on which this method was called.
 	 */
 	public Environment3D setObject(Object3D object, int index) {
+		if (objects == null) {
+			throw new NullPointerException("This environment's object array is currently null.");
+		}
 		if (object == null) {
 			throw new IllegalArgumentException("The object must not be null.");
 		}
