@@ -1,5 +1,6 @@
 package com.alyxferrari.neo3d.obj;
 import java.util.*;
+import static org.lwjgl.opengl.GL46.*;
 /** Represents a polygon in 3D space.
  * @author Alyx Ferrari
  * @since 1.0 alpha
@@ -8,6 +9,9 @@ public class Polygon3D {
 	/** List of vertices in this polygon.
 	 */
 	protected Vector3D[] vertices;
+	/**
+	 */
+	protected int glType;
 	/** Constructs a new polygon containing the specified vertices.
 	 * @param vertices The vertices with which to construct this polygon.
 	 */
@@ -24,6 +28,7 @@ public class Polygon3D {
 			}
 		}
 		this.vertices = vertices;
+		this.glType = GL_TRIANGLES;
 	}
 	/**
 	 * @return This polygon's vertices.
@@ -70,5 +75,11 @@ public class Polygon3D {
 		}
 		vertices[index] = vertex;
 		return this;
+	}
+	/**
+	 * @return This polygon's GL type (ex. GL_TRIANGLES, GL_QUADS, etc.).
+	 */
+	public int getGLType() {
+		return glType;
 	}
 }
