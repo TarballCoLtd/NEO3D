@@ -2,9 +2,8 @@ package com.alyxferrari.neo3d.gfx;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.alyxferrari.neo3d.obj.*;
+import com.alyxferrari.neo3d.*;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
@@ -24,38 +23,33 @@ public class NEOEngine {
 					glfwTerminate();
 					throw new IllegalStateException("Unable to create GLFW window.");
 				}
-				float vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
+				float data[] = {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
 				glfwMakeContextCurrent(window);
 				GL.createCapabilities();
 				glViewport(0, 0, 800, 600);
 				glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
-				String vertex = new String(Files.readAllBytes(Paths.get("neoshader.vert")));
-				String fragment = new String(Files.readAllBytes(Paths.get("neoshader.frag")));
-				int vertexShd = glCreateShader(GL_VERTEX_SHADER);
-				glShaderSource(vertexShd, vertex);
-				glCompileShader(vertexShd);
-				int fragmentShd = glCreateShader(GL_FRAGMENT_SHADER);
-				glShaderSource(fragmentShd, fragment);
-				glCompileShader(fragmentShd);
-				int shader = glCreateProgram();
-				glAttachShader(shader, vertexShd);
-				glAttachShader(shader, fragmentShd);
-				glLinkProgram(shader);
-				glDeleteShader(vertexShd);
-				glDeleteShader(fragmentShd);
+				int shader = ShaderUtils.createProgram(new File("neoshader.vert"), new File("neoshader.frag"));
 				int vbo = glGenBuffers();
 				int vao = glGenVertexArrays();
 				glBindVertexArray(vao);
 				glBindBuffer(GL_ARRAY_BUFFER, vbo);
-				glBufferData(GL_ARRAY_BUFFER, vertices, GL_DYNAMIC_DRAW);
+				glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW);
 				// location = 0
-				// vec3, so 3 values
+				// 3 values for position
 				// type of data
 				// is normalized?
-				// space between vertices, so 4 bytes (float) times 3 floats per vertex - 0 means OpenGL determines it
+				// space between vertices, so 4 bytes (float) times 3 floats per vertex and 3 floats per color - 0 means OpenGL determines it
 				// where the data begins in the array
-				glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+				glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * SizeOf.FLOAT, 0);
 				glEnableVertexAttribArray(0);
+				// location = 1
+				// 3 values for color
+				// type of data
+				// is normalized?
+				// space between vertices, so 4 bytes (float) times 3 floats per vertex and 3 floats per color
+				// array offset (halfway through for the color)
+				glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
+				glEnableVertexAttribArray(1);
 				glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				while (!glfwWindowShouldClose(window)) {
