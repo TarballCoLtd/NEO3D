@@ -1,12 +1,10 @@
 package com.alyxferrari.neo3d.gfx;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.alyxferrari.neo3d.obj.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
@@ -31,8 +29,8 @@ public class NEOEngine {
 				GL.createCapabilities();
 				glViewport(0, 0, 800, 600);
 				glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
-				String vertex = new String(Files.readAllBytes(Paths.get("vertex.shd")));
-				String fragment = new String(Files.readAllBytes(Paths.get("fragment.shd")));
+				String vertex = new String(Files.readAllBytes(Paths.get("neoshader.vert")));
+				String fragment = new String(Files.readAllBytes(Paths.get("neoshader.frag")));
 				int vertexShd = glCreateShader(GL_VERTEX_SHADER);
 				glShaderSource(vertexShd, vertex);
 				glCompileShader(vertexShd);
@@ -49,7 +47,7 @@ public class NEOEngine {
 				int vao = glGenVertexArrays();
 				glBindVertexArray(vao);
 				glBindBuffer(GL_ARRAY_BUFFER, vbo);
-				glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+				glBufferData(GL_ARRAY_BUFFER, vertices, GL_DYNAMIC_DRAW);
 				// location = 0
 				// vec3, so 3 values
 				// type of data
@@ -59,6 +57,7 @@ public class NEOEngine {
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
 				glEnableVertexAttribArray(0);
 				glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				while (!glfwWindowShouldClose(window)) {
 					// input
 					processInput(window);
@@ -79,6 +78,12 @@ public class NEOEngine {
 	protected static void processInput(long window) {
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window, true);
+		}
+		if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 	}
 	protected static void framebufferSizeCallback(long window, int width, int height) {
