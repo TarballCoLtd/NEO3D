@@ -15,7 +15,7 @@ public class NEOEngine {
 	protected static final String WINDOW_SUFFIX = "powered by " + NEO3D.LIB_NAME + " " + NEO3D.LIB_VERSION;
 	protected static long window = NULL;
 	
-	protected static float camDist = 2.0f;
+	protected static float camDist = 2.1f;
 	protected static float viewAngle = (float) Math.toRadians(80);
 	protected static float viewAngleX = 0.0f;
 	protected static float viewAngleY = 0.0f;
@@ -71,11 +71,13 @@ public class NEOEngine {
 			glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * SizeOf.FLOAT, 0);
 			glEnableVertexAttribArray(0);
 			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glfwShowWindow(window);
 			while (!glfwWindowShouldClose(window)) {
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
+				float[] data = cpuComputeAttribs();
+				glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW);
 				glUseProgram(Shaders.cpu);
 				glDrawArrays(GL_TRIANGLES, 0, 3);
 				glfwSwapBuffers(window);
@@ -159,60 +161,6 @@ public class NEOEngine {
 		float y = (float)-((Math.sin(viewAngleY)*camDist));
 		float z = (float)(Math.cos(viewAngleX)*Math.cos(viewAngleY)*camDist);
 		return new Vector3D(x, y, z);
-	}
-	public static void REMOVE_ME_PLEASE(Environment3D environment) throws IOException { // TODO: remove this method
-		if (window == NULL) {
-			if (glfwInit()) {
-				window = glfwCreateWindow(800, 600, "", NULL, NULL);
-				if (window == NULL) {
-					glfwTerminate();
-					throw new IllegalStateException("Unable to create GLFW window.");
-				}
-				float data[] = {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
-				glfwMakeContextCurrent(window);
-				GL.createCapabilities();
-				glViewport(0, 0, 800, 600);
-				glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
-				int shader = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
-				int vbo = glGenBuffers();
-				int vao = glGenVertexArrays();
-				glBindVertexArray(vao);
-				glBindBuffer(GL_ARRAY_BUFFER, vbo);
-				glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW);
-				// location = 0
-				// 3 values for position
-				// type of data
-				// is normalized?
-				// space between vertices, so 4 bytes (float) times 3 floats per vertex and 3 floats per color - 0 means OpenGL determines it
-				// where the data begins in the array
-				glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * SizeOf.FLOAT, 0);
-				glEnableVertexAttribArray(0);
-				// location = 1
-				// 3 values for color
-				// type of data
-				// is normalized?
-				// space between vertices, so 4 bytes (float) times 3 floats per vertex and 3 floats per color
-				// array offset (halfway through for the color)
-				glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
-				glEnableVertexAttribArray(1);
-				glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				while (!glfwWindowShouldClose(window)) {
-					// input
-					processInput(window);
-					// rendering
-					glClear(GL_COLOR_BUFFER_BIT);
-					glUseProgram(shader);
-					glDrawArrays(GL_TRIANGLES, 0, 3);
-					// vsync stuff
-					glfwSwapBuffers(window);
-					glfwPollEvents();
-				}
-				terminate();
-				return;
-			}
-			throw new IllegalStateException("Unable to initialize GLFW.");
-		}
 	}
 	protected static void processInput(long window) {
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
