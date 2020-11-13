@@ -1,8 +1,10 @@
 package com.alyxferrari.neo3d.gfx;
-import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import com.alyxferrari.neo3d.obj.*;
 import com.alyxferrari.neo3d.*;
+import com.alyxferrari.neo3d.exc.GLFWInitializationError;
+import com.alyxferrari.neo3d.exc.GLFWWindowCreationError;
+import java.awt.*;
 import java.io.*;
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -10,12 +12,35 @@ import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryUtil.*;
 public class NEOEngine {
 	protected static Environment3D environment = null;
+	protected static final String WINDOW_SUFFIX = "powered by " + NEO3D.LIB_NAME + " " + NEO3D.LIB_VERSION;
 	protected static long window = NULL;
 	private NEOEngine() {}
 	public static void initialize() throws IOException {
-		initialize(new Environment3D());
+		initialize(new Environment3D(), ComputeDevice.CPU, null, new Dimension(800, 600));
 	}
-	public static void initialize(Environment3D environment) throws IOException {
+	public static void initialize(Environment3D environment, ComputeDevice device, String title, Dimension size) throws IOException {
+		if (window == NULL) {
+			if (glfwInit()) {
+				window = glfwCreateWindow((int)size.getWidth(), (int)size.getHeight(), title == null ? WINDOW_SUFFIX : title + " -- " + WINDOW_SUFFIX, NULL, NULL); // is the title null? if so, don't add the dashes
+				if (window != NULL) {
+					glViewport(0, 0, 800, 600);
+					glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
+					Shaders.cpu = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
+					NEOEngine.environment = environment;
+					return;
+				}
+				glfwTerminate();
+				throw new GLFWWindowCreationError(GLFWWindowCreationError.RECOMMENDED_MESSAGE);
+			}
+			throw new GLFWInitializationError(GLFWInitializationError.RECOMMENDED_MESSAGE);
+		}
+	}
+	/** Starts rendering the current environment.
+	 */
+	public static void startRender() {
+		
+	}
+	public static void REMOVE_ME_PLEASE(Environment3D environment) throws IOException { // TODO: remove this method
 		if (window == NULL) {
 			if (glfwInit()) {
 				window = glfwCreateWindow(800, 600, "", NULL, NULL);
@@ -28,7 +53,7 @@ public class NEOEngine {
 				GL.createCapabilities();
 				glViewport(0, 0, 800, 600);
 				glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
-				int shader = ShaderUtils.createProgram(new File("neoshader.vert"), new File("neoshader.frag"));
+				int shader = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
 				int vbo = glGenBuffers();
 				int vao = glGenVertexArrays();
 				glBindVertexArray(vao);
@@ -83,10 +108,6 @@ public class NEOEngine {
 	protected static void framebufferSizeCallback(long window, int width, int height) {
 		glViewport(0, 0, width, height);
 	}
-	public static void initialize(Environment3D environment, PrintStream errorCallback) throws IOException {
-		GLFWErrorCallback.createPrint(errorCallback);
-		initialize(environment);
-	}
 	/** Sets the current environment.
 	 */
 	public static void setEnvironment(Environment3D environment) {
@@ -101,12 +122,7 @@ public class NEOEngine {
 	public static Environment3D getEnvironment() {
 		return environment;
 	}
-	/** Sets the error callback stream. GLFW errors, should they appear, will be written to this stream.
-	 */
-	public static void setErrorCallback(PrintStream errorCallback) {
-		GLFWErrorCallback.createPrint(errorCallback);
-	}
-	/** Terminates GLFW and stops rendering.
+	/** Terminates GLFW and stops rendering. Must be called from the main thread.
 	 */
 	public static void terminate() {
 		if (window != NULL) {
