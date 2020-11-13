@@ -29,6 +29,12 @@ public class Object3D {
 		return Arrays.copyOf(polygons, polygons.length);
 	}
 	/**
+	 * @return How many polygons are in this object.
+	 */
+	public int getPolygonsLength() {
+		return polygons.length;
+	}
+	/**
 	 * @param index The index of the desired polygon.
 	 * @return The {@code index}-th polygon in this object.
 	 */

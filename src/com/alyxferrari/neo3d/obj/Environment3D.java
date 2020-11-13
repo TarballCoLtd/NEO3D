@@ -35,6 +35,12 @@ public class Environment3D {
 		return Arrays.copyOf(objects, objects.length);
 	}
 	/**
+	 * @return How many objects are in this environment.
+	 */
+	public int getObjectsLength() {
+		return objects.length;
+	}
+	/**
 	 * @param index The index of the desired object.
 	 * @return The {@code index}-th object in this environment.
 	 */

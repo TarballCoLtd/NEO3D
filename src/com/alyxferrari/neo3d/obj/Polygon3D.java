@@ -37,6 +37,12 @@ public class Polygon3D {
 		return Arrays.copyOf(vertices, vertices.length);
 	}
 	/**
+	 * @return How many vertices are in this polygon.
+	 */
+	public int getVerticesLength() {
+		return vertices.length;
+	}
+	/**
 	 * @param index The vertex to return.
 	 * @return The {@code index}-th vertex of this polygon.
 	 */
