@@ -10,7 +10,7 @@ public class NEOExample {
 		Polygon3D[] polygons = {new Polygon3D(vertices)};
 		Object3D[] objects = {new Object3D(polygons)};
 		Environment3D environment = new Environment3D(objects);
-		NEOEngine.initialize(environment, ComputeDevice.CPU, "NEO3D example", new Dimension(800, 600));
+		NEOEngine.initialize(environment, ComputeDevice.GPU, "NEO3D example", new Dimension(800, 600));
 		NEOEngine.startRender();
 	}
 }

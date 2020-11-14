@@ -14,9 +14,11 @@ public class NEOEngine {
 	protected static Environment3D environment = null;
 	protected static final String WINDOW_SUFFIX = "powered by " + NEO3D.LIB_NAME + " " + NEO3D.LIB_VERSION;
 	protected static long window = NULL;
+	protected static ComputeDevice device = ComputeDevice.CPU;
+	protected static int shader = 0;
 	
 	protected static float camDist = 3.0f;
-	protected static float viewAngle = (float) Math.toRadians(80);
+	protected static float viewAngle = (float) Math.toRadians(160);
 	protected static float viewAngleX = 0.0f;
 	protected static float viewAngleY = 0.0f;
 	protected static float mouseX = 0.0f;
@@ -36,14 +38,23 @@ public class NEOEngine {
 				glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 				window = glfwCreateWindow((int)size.getWidth(), (int)size.getHeight(), title == null ? WINDOW_SUFFIX : title + " -- " + WINDOW_SUFFIX, NULL, NULL); // is the title null? if so, don't add the dashes
 				if (window != NULL) {
+					NEOEngine.environment = environment;
+					NEOEngine.device = device;
 					width = (int) size.getWidth();
 					height = (int) size.getHeight();
 					glfwSetCursorPosCallback(window, NEOEngine::cursorPositionCallback);
+					glfwSetScrollCallback(window, NEOEngine::scrollCallback);
+					glfwSetMouseButtonCallback(window, NEOEngine::mouseButtonCallback);
 					glfwMakeContextCurrent(window);
 					GL.createCapabilities();
-					Shaders.cpu = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
+					if (device == ComputeDevice.CPU) {
+						shader = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
+					} else if (device == ComputeDevice.GPU) {
+						shader = ShaderUtils.createProgram(new File("shaders/gpu/gpurender.vert"), new File("shaders/gpu/gpurender.frag"));
+					} else {
+						throw new IllegalArgumentException("Compute device must not be null.");
+					}
 					glfwMakeContextCurrent(NULL);
-					NEOEngine.environment = environment;
 					return;
 				}
 				// if the window is null
@@ -64,21 +75,46 @@ public class NEOEngine {
 			glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
 			int vbo = glGenBuffers();
 			int vao = glGenVertexArrays();
-			float[] attribs = cpuComputeAttribs();
 			glBindVertexArray(vao);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
-			glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * SizeOf.FLOAT, 0);
-			glEnableVertexAttribArray(0);
+			setVertexAttributePointers();
+			int viewAnglesID;
+			int sinViewAnglesID;
+			int cosViewAnglesID;
+			int windowID;
+			int camDistID;
+			int sinViewAngle2ID;
+			Runnable run = () -> {};
+			if (device == ComputeDevice.CPU) { 
+				run = () -> {
+					glBufferData(GL_ARRAY_BUFFER, cpuComputeAttribs(), GL_DYNAMIC_DRAW);
+				};
+			} else {
+				viewAnglesID = glGetUniformLocation(shader, "viewAngles");
+				sinViewAnglesID = glGetUniformLocation(shader, "sinViewAngles");
+				cosViewAnglesID = glGetUniformLocation(shader, "cosViewAngles");
+				windowID = glGetUniformLocation(shader, "window");
+				camDistID = glGetUniformLocation(shader, "camDist");
+				sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
+				run = () -> {
+					float[] attribs = gpuComputeAttribs();
+					glUniform2f(viewAnglesID, viewAngleX, viewAngleY);
+					glUniform2f(sinViewAnglesID, (float)Math.sin(viewAngleX), (float)Math.sin(viewAngleY));
+					glUniform2f(cosViewAnglesID, (float)Math.cos(viewAngleX), (float)Math.cos(viewAngleY));
+					glUniform2f(windowID, width, height);
+					glUniform1f(camDistID, camDist);
+					glUniform1f(sinViewAngle2ID, (float)Math.sin(viewAngle/2.0f));
+					glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
+				};
+			}
 			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glfwShowWindow(window);
+			glUseProgram(shader);
 			while (!glfwWindowShouldClose(window)) {
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
-				float[] data = cpuComputeAttribs();
-				glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW);
-				glUseProgram(Shaders.cpu);
+				run.run(); // populates buffers and uniforms based on compute device (see above)
 				glDrawArrays(GL_TRIANGLES, 0, 3);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
@@ -87,6 +123,21 @@ public class NEOEngine {
 			return;
 		}
 		throw new NEO3DNotInitializedException(NEO3DNotInitializedException.RECOMMENDED_MESSAGE);
+	}
+	protected static void setVertexAttributePointers() {
+		if (device == ComputeDevice.CPU) {
+			// location = 0
+			// 3 values for point
+			// primitive type
+			// is normalized?
+			// how many bytes for all attribs together
+			// offset of this attrib
+			glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * SizeOf.FLOAT, 0);
+			glEnableVertexAttribArray(0);
+		} else if (device == ComputeDevice.GPU) {
+			glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * SizeOf.FLOAT, 0);
+			glEnableVertexAttribArray(0);
+		}
 	}
 	protected static float[] toArray(ArrayList<Float> array) {
 		float[] ret = new float[array.size()];
@@ -98,13 +149,28 @@ public class NEOEngine {
 	protected static void calculateViewAngles() {
 		viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
 		viewAngleY = -((mouseY-height)/2)/SENSITIVITY;
-		if (Math.abs((mouseY-height)/2) > Math.PI/2*SENSITIVITY) {
-			if (viewAngleY < 0) {
-				viewAngleY = (float)(-Math.PI/2*SENSITIVITY);
-			} else {
-				viewAngleY = (float)(Math.PI/2*SENSITIVITY);
+		if (viewAngleY > Math.PI) {
+			viewAngleY = (float) Math.PI;
+		} else if (viewAngleY < -Math.PI) {
+			viewAngleY = (float) -Math.PI;
+		}
+	}
+	protected static float[] gpuComputeAttribs() {
+		calculateViewAngles();
+		ArrayList<Float> attribs = new ArrayList<Float>();
+		Object3D[] objects = environment.getObjects();
+		for (int x = 0; x < objects.length; x++) {
+			Polygon3D[] polygons = objects[x].getPolygons();
+			for (int y = 0; y < polygons.length; y++) {
+				Vector3D[] vertices = polygons[y].getVertices();
+				for (int z = 0; z < vertices.length; z++) {
+					attribs.add(vertices[z].getX());
+					attribs.add(vertices[z].getY());
+					attribs.add(vertices[z].getZ());
+				}
 			}
 		}
+		return toArray(attribs);
 	}
 	protected static float[] cpuComputeAttribs() {
 		calculateViewAngles();
@@ -121,14 +187,11 @@ public class NEOEngine {
 						zAngle = 0.0f;
 					}
 					float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
-					float xTransform = 0.0f;
-					float yTransform = 0.0f;
+					float xTransform = (float)(mag*SCALE*Math.cos(viewAngleX-zAngle));
+					float yTransform = (float)(mag*SCALE*Math.sin(viewAngleX-zAngle)*Math.sin(viewAngleY)+vertex.getY()*SCALE*Math.cos(viewAngleY));
 					if (vertex.getX() < 0.0f) {
-						xTransform = (float)(-mag*SCALE*Math.cos(viewAngleX-zAngle));
-						yTransform = (float)(-mag*SCALE*Math.sin(viewAngleX-zAngle)*Math.sin(viewAngleY)+vertex.getY()*SCALE*Math.cos(viewAngleY));
-					} else {
-						xTransform = (float)(mag*SCALE*Math.cos(viewAngleX-zAngle));
-						yTransform = (float)(mag*SCALE*Math.sin(viewAngleX-zAngle)*Math.sin(viewAngleY)+vertex.getY()*SCALE*Math.cos(viewAngleY));
+						xTransform *= -1.0f;
+						yTransform *= -1.0f;
 					}
 					if (vertex.getZ()*Math.cos(viewAngleX)*Math.cos(viewAngleY)+vertex.getX()*Math.sin(viewAngleX)*Math.cos(viewAngleY)-vertex.getY()*Math.sin(viewAngleY) < camDist) {
 						Vector3D cam = getCameraPositionActual();
@@ -137,8 +200,8 @@ public class NEOEngine {
 						float camScale = (float)(distance*Math.cos(theta)*Math.sin(viewAngle/2.0f));
 						float ptX = width/2.0f+xTransform/camScale;
 						float ptY = height/2.0f-yTransform/camScale;
-						ptX = ptX / width;
-						ptY = ptY / height;
+						ptX /= width;
+						ptY /= height;
 						ptX *= 2.0f;
 						ptY *= 2.0f;
 						ptX -= 1.0f;
@@ -146,7 +209,6 @@ public class NEOEngine {
 						ptY *= -1.0f;
 						attribs.add(ptX);
 						attribs.add(ptY);
-						attribs.add(0.0f);
 					}
 				}
 			}
@@ -164,13 +226,7 @@ public class NEOEngine {
 	}
 	protected static void processInput(long window) {
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-			glfwSetWindowShouldClose(window, true);
-		}
-		if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS) {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		}
-		if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS) {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 	}
 	protected static void cursorPositionCallback(long window, double xpos, double ypos) {
@@ -181,6 +237,18 @@ public class NEOEngine {
 		glViewport(0, 0, width, height);
 		NEOEngine.width = width;
 		NEOEngine.height = height;
+	}
+	protected static void scrollCallback(long window, double xoffset, double yoffset) {
+		if (yoffset > 0) {
+			camDist /= 1.2f;
+		} else if (yoffset < 0) {
+			camDist *= 1.2f;
+		}
+	}
+	protected static void mouseButtonCallback(long window, int button, int action, int mods) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
 	}
 	/** Sets the current environment.
 	 */
