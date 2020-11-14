@@ -38,7 +38,7 @@ public class NEOEngine {
 				if (window != NULL) {
 					width = (int) size.getWidth();
 					height = (int) size.getHeight();
-					//glfwSetCursorPosCallback(window, NEOEngine::cursorPositionCallback);
+					glfwSetCursorPosCallback(window, NEOEngine::cursorPositionCallback);
 					glfwMakeContextCurrent(window);
 					GL.createCapabilities();
 					Shaders.cpu = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
