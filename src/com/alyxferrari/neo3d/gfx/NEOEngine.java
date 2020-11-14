@@ -15,7 +15,7 @@ public class NEOEngine {
 	protected static final String WINDOW_SUFFIX = "powered by " + NEO3D.LIB_NAME + " " + NEO3D.LIB_VERSION;
 	protected static long window = NULL;
 	
-	protected static float camDist = 2.1f;
+	protected static float camDist = 3.0f;
 	protected static float viewAngle = (float) Math.toRadians(80);
 	protected static float viewAngleX = 0.0f;
 	protected static float viewAngleY = 0.0f;
@@ -38,7 +38,7 @@ public class NEOEngine {
 				if (window != NULL) {
 					width = (int) size.getWidth();
 					height = (int) size.getHeight();
-					glfwSetCursorPosCallback(window, NEOEngine::cursorPositionCallback);
+					//glfwSetCursorPosCallback(window, NEOEngine::cursorPositionCallback);
 					glfwMakeContextCurrent(window);
 					GL.createCapabilities();
 					Shaders.cpu = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
@@ -96,9 +96,9 @@ public class NEOEngine {
 		return ret;
 	}
 	protected static void calculateViewAngles() {
-		viewAngleX = -(width/2)/SENSITIVITY;
-		viewAngleY = -(height/2)/SENSITIVITY;
-		if (Math.abs(height/2) > Math.PI/2*SENSITIVITY) {
+		viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
+		viewAngleY = -((mouseY-height)/2)/SENSITIVITY;
+		if (Math.abs((mouseY-height)/2) > Math.PI/2*SENSITIVITY) {
 			if (viewAngleY < 0) {
 				viewAngleY = (float)(-Math.PI/2*SENSITIVITY);
 			} else {
@@ -123,7 +123,7 @@ public class NEOEngine {
 					float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
 					float xTransform = 0.0f;
 					float yTransform = 0.0f;
-					if (vertex.getX() < 0) {
+					if (vertex.getX() < 0.0f) {
 						xTransform = (float)(-mag*SCALE*Math.cos(viewAngleX-zAngle));
 						yTransform = (float)(-mag*SCALE*Math.sin(viewAngleX-zAngle)*Math.sin(viewAngleY)+vertex.getY()*SCALE*Math.cos(viewAngleY));
 					} else {
@@ -134,16 +134,16 @@ public class NEOEngine {
 						Vector3D cam = getCameraPositionActual();
 						float distance = hypot3(cam.getX()-vertex.getX(), cam.getY()-vertex.getY(), cam.getZ()-vertex.getZ());
 						float theta = (float) Math.asin((Math.hypot(xTransform, yTransform)/SCALE)/distance);
-						float camScale = (float)(distance*Math.cos(theta)*Math.sin(viewAngle/2));
-						float ptX = width/2+xTransform/camScale;
-						float ptY = height/2-yTransform/camScale;
+						float camScale = (float)(distance*Math.cos(theta)*Math.sin(viewAngle/2.0f));
+						float ptX = width/2.0f+xTransform/camScale;
+						float ptY = height/2.0f-yTransform/camScale;
 						ptX = ptX / width;
 						ptY = ptY / height;
-						ptX *= 2;
-						ptY *= 2;
-						ptX -= 1;
-						ptY -= 1;
-						ptY *= -1;
+						ptX *= 2.0f;
+						ptY *= 2.0f;
+						ptX -= 1.0f;
+						ptY -= 1.0f;
+						ptY *= -1.0f;
 						attribs.add(ptX);
 						attribs.add(ptY);
 						attribs.add(0.0f);
