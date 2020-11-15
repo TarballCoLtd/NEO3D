@@ -11,27 +11,61 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryUtil.*;
 public class NEOEngine {
+	/** Current 3D environment.
+	 */
 	protected static Environment3D environment = null;
+	/** Window title suffix.
+	 */
 	protected static final String WINDOW_SUFFIX = "powered by " + NEO3D.LIB_NAME + " " + NEO3D.LIB_VERSION;
+	/** GLFW window ID. Don't modify unless you know what you're doing.
+	 */
 	protected static long window = NULL;
+	/** Current 3D compute device.
+	 */
 	protected static ComputeDevice device = ComputeDevice.CPU;
+	/** Current OpenGL shader ID.
+	 */
 	protected static int shader = 0;
-	
+	/** Radius of imaginary sphere around origin.
+	 */
 	protected static float camDist = 3.0f;
+	/** FOV in radians.
+	 */
 	protected static float viewAngle = (float) Math.toRadians(160);
+	/** X coordinate of imaginary sphere around origin.
+	 */
 	protected static float viewAngleX = 0.0f;
+	/** Y coordinate of imaginary sphere around origin.
+	 */
 	protected static float viewAngleY = 0.0f;
+	/** Mouse x position.
+	 */
 	protected static float mouseX = 0.0f;
+	/** Mouse y position.
+	 */
 	protected static float mouseY = 0.0f;
+	/** Current width of GLFW window.
+	 */
 	protected static int width = 0;
+	/** Current height of GLFW window.
+	 */
 	protected static int height = 0;
-	
 	protected static final float SENSITIVITY = 100.0f;
 	protected static final float SCALE = 100.0f;
 	private NEOEngine() {}
+	/** Initializes OpenGL and GLFW and sets up the NEO3D renderer with a blank scene.
+	 * @throws IOException If loading the shader files fails.
+	 */
 	public static void initialize() throws IOException {
 		initialize(new Environment3D(), ComputeDevice.CPU, null, new Dimension(800, 600));
 	}
+	/** Initializes OpenGL and GLFW and sets up the NEO3D renderer.
+	 * @param environment The 3D environment.
+	 * @param device The device on which to do the 3D projection.
+	 * @param title Title for the window.
+	 * @param size Desired size for the window.
+	 * @throws IOException If loading the shader files fails.
+	 */
 	public static void initialize(Environment3D environment, ComputeDevice device, String title, Dimension size) throws IOException {
 		if (window == NULL) {
 			if (glfwInit()) {
@@ -85,9 +119,9 @@ public class NEOEngine {
 			int windowID;
 			int camDistID;
 			int sinViewAngle2ID;
-			Runnable run = () -> {};
+			Runnable bufferPopulation;
 			if (device == ComputeDevice.CPU) { 
-				run = () -> {
+				bufferPopulation = () -> {
 					glBufferData(GL_ARRAY_BUFFER, cpuComputeAttribs(), GL_DYNAMIC_DRAW);
 				};
 			} else {
@@ -97,7 +131,7 @@ public class NEOEngine {
 				windowID = glGetUniformLocation(shader, "window");
 				camDistID = glGetUniformLocation(shader, "camDist");
 				sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
-				run = () -> {
+				bufferPopulation = () -> {
 					float[] attribs = gpuComputeAttribs();
 					glUniform2f(viewAnglesID, viewAngleX, viewAngleY);
 					glUniform2f(sinViewAnglesID, (float)Math.sin(viewAngleX), (float)Math.sin(viewAngleY));
@@ -127,7 +161,7 @@ public class NEOEngine {
 				}
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
-				run.run(); // populates buffers and uniforms based on compute device (see above)
+				bufferPopulation.run(); // populates buffers and uniforms based on compute device (see above)
 				glDrawArrays(GL_TRIANGLES, 0, 3);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
