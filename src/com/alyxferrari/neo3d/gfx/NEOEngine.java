@@ -65,12 +65,13 @@ public class NEOEngine {
 			throw new GLFWInitializationError(GLFWInitializationError.RECOMMENDED_MESSAGE);
 		}
 	}
-	/** Starts rendering the current environment.
+	/** Starts rendering the current environment. This method blocks until the window is closed.
 	 */
 	public static void startRender() {
 		if (window != NULL) {
 			glfwMakeContextCurrent(window);
 			GL.createCapabilities();
+			glfwSwapInterval(0);
 			glViewport(0, 0, width, height);
 			glfwSetFramebufferSizeCallback(window, NEOEngine::framebufferSizeCallback);
 			int vbo = glGenBuffers();
@@ -111,13 +112,26 @@ public class NEOEngine {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glfwShowWindow(window);
 			glUseProgram(shader);
+			long lastFpsTime = 0L;
+			long lastLoopTime = System.nanoTime();
+			int fps = 0;
 			while (!glfwWindowShouldClose(window)) {
+				long now = System.nanoTime();
+				long updateLength = now-lastLoopTime;
+				lastLoopTime = now;
+				lastFpsTime += updateLength;
+				if (lastFpsTime >= 1000000000) {
+					System.out.println("FPS: " + fps);
+					lastFpsTime = 0;
+					fps = 0;
+				}
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
 				run.run(); // populates buffers and uniforms based on compute device (see above)
 				glDrawArrays(GL_TRIANGLES, 0, 3);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
+				fps++;
 			}
 			terminate();
 			return;
