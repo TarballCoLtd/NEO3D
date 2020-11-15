@@ -103,4 +103,8 @@ public class Vector3D {
 		this.color = color;
 		return this;
 	}
+	@Override
+	public String toString() {
+		return "(" + x + ", " + y + ", " + z + ")";
+	}
 }

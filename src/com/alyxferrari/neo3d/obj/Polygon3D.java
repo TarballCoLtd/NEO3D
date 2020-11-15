@@ -1,6 +1,5 @@
 package com.alyxferrari.neo3d.obj;
 import java.util.*;
-import static org.lwjgl.opengl.GL46.*;
 /** Represents a polygon in 3D space.
  * @author Alyx Ferrari
  * @since 1.0 alpha
@@ -9,9 +8,6 @@ public class Polygon3D {
 	/** List of vertices in this polygon.
 	 */
 	protected Vector3D[] vertices;
-	/**
-	 */
-	protected int glType;
 	/** Constructs a new polygon containing the specified vertices.
 	 * @param vertices The vertices with which to construct this polygon.
 	 */
@@ -28,7 +24,23 @@ public class Polygon3D {
 			}
 		}
 		this.vertices = vertices;
-		this.glType = GL_TRIANGLES;
+	}
+	public Polygon3D(Vector3D[] vertices, NEOColor color) {
+		if (vertices == null) {
+			throw new IllegalArgumentException("Vertices must not be null.");
+		}
+		for (int i = 0; i < vertices.length; i++) {
+			vertices[i].setColor(color);
+		}
+		if (vertices.length != 3) {
+			throw new IllegalArgumentException("In this version of NEO3D, only triangles are supported.");
+		}
+		for (int i = 0; i < vertices.length; i++) {
+			if (vertices[i] == null) {
+				throw new IllegalArgumentException("Vertices must not be null.");
+			}
+		}
+		this.vertices = vertices;
 	}
 	/**
 	 * @return This polygon's vertices.
@@ -82,12 +94,6 @@ public class Polygon3D {
 		vertices[index] = vertex;
 		return this;
 	}
-	/**
-	 * @return This polygon's GL type (ex. GL_TRIANGLES, GL_QUADS, etc.).
-	 */
-	public int getGLType() {
-		return glType;
-	}
 	/** Sets the color of every vertex in this polygon.
 	 * @param color The vertices' new color.
 	 * @return The Polygon3D on which this method was called.
@@ -97,5 +103,17 @@ public class Polygon3D {
 			vertices[i].setColor(color);
 		}
 		return this;
+	}
+	@Override
+	public String toString() {
+		String ret = "{";
+		for (int i = 0; i < vertices.length; i++) {
+			ret += vertices[i].toString();
+			if (i != vertices.length-1) {
+				ret += ", ";
+			}
+		}
+		ret += "}";
+		return ret;
 	}
 }

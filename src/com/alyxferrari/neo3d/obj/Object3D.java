@@ -1,5 +1,7 @@
 package com.alyxferrari.neo3d.obj;
 import java.util.*;
+import java.io.*;
+import com.mokiat.data.front.parser.*;
 /** Represents an object in 3D space.
  * @author Alyx Ferrari
  * @since 1.0 alpha
@@ -71,5 +73,38 @@ public class Object3D {
 		}
 		polygons[index] = polygon;
 		return this;
+	}
+	public static Object3D loadFromModel(String path) throws IOException {
+		return loadFromModel(new File(path), new NEOColor(0.0f));
+	}
+	public static Object3D loadFromModel(String path, NEOColor polygonColor) throws IOException {
+		return loadFromModel(new File(path), polygonColor);
+	}
+	public static Object3D loadFromModel(File path) throws IOException {
+		return loadFromModel(path, new NEOColor(0.0f));
+	}
+	public static Object3D loadFromModel(File path, NEOColor polygonColor) throws IOException {
+		IOBJParser parser = new OBJParser();
+		OBJModel model = parser.parse(new FileInputStream(path));
+		ArrayList<Polygon3D> polygons = new ArrayList<Polygon3D>();
+		for (OBJObject object : model.getObjects()) {
+			for (OBJMesh mesh : object.getMeshes()) {
+				for (OBJFace face : mesh.getFaces()) {
+					List<OBJDataReference> references = face.getReferences();
+					if (references.size() == 3) {
+						OBJVertex vFirst = model.getVertex(references.get(0));
+						OBJVertex vSecond = model.getVertex(references.get(1));
+						OBJVertex vThird = model.getVertex(references.get(2));
+						Vector3D[] vectors = {new Vector3D(vFirst.x, vFirst.y, vFirst.z), new Vector3D(vSecond.x, vSecond.y, vSecond.z), new Vector3D(vThird.x, vThird.y, vThird.z)};
+						polygons.add(new Polygon3D(vectors, polygonColor));
+					}
+				}
+			}
+		}
+		Polygon3D[] ret = new Polygon3D[polygons.size()];
+		for (int i = 0; i < ret.length; i++) {
+			ret[i] = polygons.get(i);
+		}
+		return new Object3D(ret);
 	}
 }

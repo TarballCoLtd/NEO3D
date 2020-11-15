@@ -22,7 +22,7 @@ public class NEOEngine {
 	protected static long window = NULL;
 	/** Current 3D compute device.
 	 */
-	protected static ComputeDevice device = ComputeDevice.CPU;
+	protected static ComputeDevice device = ComputeDevice.GPU;
 	/** Current OpenGL shader ID. Don't modify unless you know what you're doing.
 	 */
 	protected static int shader = 0;
@@ -54,7 +54,7 @@ public class NEOEngine {
 	 * @throws IOException If loading the shader files fails.
 	 */
 	public static void initialize() throws IOException {
-		initialize(new Environment3D(), ComputeDevice.CPU, null, new Dimension(800, 600));
+		initialize(new Environment3D(), ComputeDevice.GPU, null, new Dimension(800, 600));
 	}
 	/** Initializes OpenGL and GLFW and sets up the NEO3D renderer.
 	 * @param environment The 3D environment.
@@ -67,7 +67,7 @@ public class NEOEngine {
 		if (window == NULL) {
 			if (glfwInit()) {
 				glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-				window = glfwCreateWindow((int)size.getWidth(), (int)size.getHeight(), title == null ? WINDOW_SUFFIX : title + " -- " + WINDOW_SUFFIX, NULL, NULL); // is the title null? if so, don't add the dashes
+				window = glfwCreateWindow((int)size.getWidth(), (int)size.getHeight(), title == null || title.equals("") ? WINDOW_SUFFIX : title + " -- " + WINDOW_SUFFIX, NULL, NULL); // is the title null? if so, don't add the dashes
 				if (window != NULL) {
 					NEOEngine.environment = environment;
 					NEOEngine.device = device;
@@ -206,7 +206,7 @@ public class NEOEngine {
 	 */
 	protected static void calculateViewAngles() {
 		float viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
-		float viewAngleY = NEOMath.clamp(-((mouseY-height)/2)/SENSITIVITY, -NEOMath.PI, NEOMath.PI);
+		float viewAngleY = NEOMath.clamp(-((mouseY-height)/2)/SENSITIVITY, -NEOMath.PI*0.5f, NEOMath.PI*0.5f);
 		viewAngles = new ViewAngle(viewAngleX, viewAngleY);
 	}
 	/** Computes vertex attributes on the GPU.
@@ -250,9 +250,9 @@ public class NEOEngine {
 					Vector3D vertex = vertices[z];
 					NEOColor color = vertex.getColor();
 					if (vertex.getZ()*viewAngles.cosViewAngleX*viewAngles.cosViewAngleY+vertex.getX()*viewAngles.sinViewAngleX*viewAngles.cosViewAngleY-vertex.getY()*viewAngles.sinViewAngleY < camDist) {
-						float zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
-						if (vertex.getX() == 0.0f && vertex.getZ() == 0.0f) {
-							zAngle = 0.0f;
+						float zAngle = 0.0f;
+						if (vertex.getX() != 0.0f || vertex.getZ() != 0.0f) {
+							zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
 						}
 						float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
 						float xTransform = (float)(mag*SCALE*Math.cos(viewAngles.viewAngleX-zAngle));
