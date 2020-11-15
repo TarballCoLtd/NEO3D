@@ -172,6 +172,8 @@ public class NEOEngine {
 		}
 		throw new NEO3DNotInitializedException(NEO3DNotInitializedException.RECOMMENDED_MESSAGE);
 	}
+	/** Sets the vertex attribute pointers for the current compute device.
+	 */
 	protected static void setVertexAttributePointers() {
 		if (device == ComputeDevice.CPU) {
 			// location = 0
@@ -187,6 +189,8 @@ public class NEOEngine {
 			glEnableVertexAttribArray(0);
 		}
 	}
+	/** Used internally. Converts a float ArrayList to a primitive float array.
+	 */
 	protected static float[] toArray(ArrayList<Float> array) {
 		float[] ret = new float[array.size()];
 		for (int i = 0; i < ret.length; i++) {
@@ -194,6 +198,8 @@ public class NEOEngine {
 		}
 		return ret;
 	}
+	/** Calculates the view angles based on the mouse position.
+	 */
 	protected static void calculateViewAngles() {
 		viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
 		viewAngleY = -((mouseY-height)/2)/SENSITIVITY;
@@ -203,6 +209,9 @@ public class NEOEngine {
 			viewAngleY = (float) -Math.PI;
 		}
 	}
+	/** Computes vertex attributes on the GPU.
+	 * @return The vertex attributes to be passed onto the vertex shader.
+	 */
 	protected static float[] gpuComputeAttribs() {
 		calculateViewAngles();
 		ArrayList<Float> attribs = new ArrayList<Float>();
@@ -220,6 +229,9 @@ public class NEOEngine {
 		}
 		return toArray(attribs);
 	}
+	/** Computes vertex attributes on the CPU.
+	 * @return The vertex attributes to be passed onto the vertex shader.
+	 */
 	protected static float[] cpuComputeAttribs() {
 		calculateViewAngles();
 		ArrayList<Float> attribs = new ArrayList<Float>();
@@ -263,29 +275,41 @@ public class NEOEngine {
 		}
 		return toArray(attribs);
 	}
+	/** Used internally. 3D equivalent of Math.hypot(double, double).
+	 */
 	protected static float hypot3(float x, float y, float z) {
 		return (float) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
 	}
+	/** Calculates the position of the camera in 3D space based on the view angles.
+	 */
 	public static Vector3D getCameraPositionActual() {
 		float x = (float)(Math.sin(viewAngleX)*Math.cos(viewAngleY)*camDist);
 		float y = (float)-((Math.sin(viewAngleY)*camDist));
 		float z = (float)(Math.cos(viewAngleX)*Math.cos(viewAngleY)*camDist);
 		return new Vector3D(x, y, z);
 	}
+	/** GLFW input processing.
+	 */
 	protected static void processInput(long window) {
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 	}
+	/** GLFW cursor position callback.
+	 */
 	protected static void cursorPositionCallback(long window, double xpos, double ypos) {
 		mouseX = (float) xpos;
 		mouseY = (float) ypos;
 	}
+	/** GLFW framebuffer size callback.
+	 */
 	protected static void framebufferSizeCallback(long window, int width, int height) {
 		glViewport(0, 0, width, height);
 		NEOEngine.width = width;
 		NEOEngine.height = height;
 	}
+	/** GLFW scroll callback.
+	 */
 	protected static void scrollCallback(long window, double xoffset, double yoffset) {
 		if (yoffset > 0) {
 			camDist /= 1.2f;
@@ -293,6 +317,8 @@ public class NEOEngine {
 			camDist *= 1.2f;
 		}
 	}
+	/** GLFW mouse button callback.
+	 */
 	protected static void mouseButtonCallback(long window, int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -312,7 +338,7 @@ public class NEOEngine {
 	public static Environment3D getEnvironment() {
 		return environment;
 	}
-	/** Terminates GLFW and stops rendering. Must be called from the main thread.
+	/** Terminates GLFW and stops rendering. Must be called from the main thread. This is called automatically by startRender() when the window is closed.
 	 */
 	public static void terminate() {
 		if (window != NULL) {
