@@ -13,6 +13,9 @@ public class Vector3D {
 	/** This vector's z value.
 	 */
 	protected float z;
+	/** This vector's color.
+	 */
+	protected NEOColor color;
 	/** Constructs a new vector at the origin.
 	 */
 	public Vector3D() {
@@ -30,9 +33,19 @@ public class Vector3D {
 	 * @param z The z position.
 	 */
 	public Vector3D(float x, float y, float z) {
+		this(x, y, z, new NEOColor(0.0f));
+	}
+	/** Constructs a new vector at (x, y, z) in 3D space with the specified color.
+	 * @param x The x position.
+	 * @param y The y position.
+	 * @param z The z position.
+	 * @param color The color.
+	 */
+	public Vector3D(float x, float y, float z, NEOColor color) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
+		this.color = color;
 	}
 	/**
 	 * @return This vector's x value.
@@ -74,6 +87,20 @@ public class Vector3D {
 	 */
 	public Vector3D setZ(float z) {
 		this.z = z;
+		return this;
+	}
+	/**
+	 * @return This vector's color.
+	 */
+	public NEOColor getColor() {
+		return color;
+	}
+	/** Sets this vector's color.
+	 * @param color The vector's new color.
+	 * @return The Vector3D on which this method was called.
+	 */
+	public Vector3D setColor(NEOColor color) {
+		this.color = color;
 		return this;
 	}
 }
