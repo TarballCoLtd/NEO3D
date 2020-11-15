@@ -31,13 +31,10 @@ public class NEOEngine {
 	protected static float camDist = 3.0f;
 	/** FOV in radians.
 	 */
-	protected static float viewAngle = (float) Math.toRadians(160);
-	/** X coordinate of imaginary sphere around origin.
+	protected static float viewAngle = (float) Math.toRadians(80);
+	/** Coordinates of camera position on imaginary sphere around the origin.
 	 */
-	protected static float viewAngleX = 0.0f;
-	/** Y coordinate of imaginary sphere around origin.
-	 */
-	protected static float viewAngleY = 0.0f;
+	protected static ViewAngle viewAngles = new ViewAngle(0.0f, 0.0f);
 	/** Mouse x position.
 	 */
 	protected static float mouseX = 0.0f;
@@ -182,11 +179,15 @@ public class NEOEngine {
 			// is normalized?
 			// how many bytes for all attribs together
 			// offset of this attrib
-			glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * SizeOf.FLOAT, 0);
+			glVertexAttribPointer(0, 2, GL_FLOAT, false, 6 * SizeOf.FLOAT, 0);
 			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 4, GL_FLOAT, false, 6 * SizeOf.FLOAT, 2 * SizeOf.FLOAT);
+			glEnableVertexAttribArray(1);
 		} else if (device == ComputeDevice.GPU) {
-			glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * SizeOf.FLOAT, 0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, false, 7 * SizeOf.FLOAT, 0);
 			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 4, GL_FLOAT, false, 7 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
+			glEnableVertexAttribArray(1);
 		}
 	}
 	/** Used internally. Converts a float ArrayList to a primitive float array.
@@ -221,9 +222,15 @@ public class NEOEngine {
 			for (int y = 0; y < polygons.length; y++) {
 				Vector3D[] vertices = polygons[y].getVertices();
 				for (int z = 0; z < vertices.length; z++) {
-					attribs.add(vertices[z].getX());
-					attribs.add(vertices[z].getY());
-					attribs.add(vertices[z].getZ());
+					Vector3D vertex = vertices[z];
+					NEOColor color = vertex.getColor();
+					attribs.add(vertex.getX());
+					attribs.add(vertex.getY());
+					attribs.add(vertex.getZ());
+					attribs.add(color.getRed());
+					attribs.add(color.getGreen());
+					attribs.add(color.getBlue());
+					attribs.add(color.getAlpha());
 				}
 			}
 		}
@@ -242,6 +249,7 @@ public class NEOEngine {
 				Vector3D[] vertices = polygons[y].getVertices();
 				for (int z = 0; z < vertices.length; z++) {
 					Vector3D vertex = vertices[z];
+					NEOColor color = vertex.getColor();
 					float zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
 					if (vertex.getX() == 0.0f && vertex.getZ() == 0.0f) {
 						zAngle = 0.0f;
@@ -269,6 +277,10 @@ public class NEOEngine {
 						ptY *= -1.0f;
 						attribs.add(ptX);
 						attribs.add(ptY);
+						attribs.add(color.getRed());
+						attribs.add(color.getGreen());
+						attribs.add(color.getBlue());
+						attribs.add(color.getAlpha());
 					}
 				}
 			}

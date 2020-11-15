@@ -88,4 +88,14 @@ public class Polygon3D {
 	public int getGLType() {
 		return glType;
 	}
+	/** Sets the color of every vertex in this polygon.
+	 * @param color The vertices' new color.
+	 * @return The Polygon3D on which this method was called.
+	 */
+	public Polygon3D setColor(NEOColor color) {
+		for (int i = 0; i < vertices.length; i++) {
+			vertices[i].setColor(color);
+		}
+		return this;
+	}
 }

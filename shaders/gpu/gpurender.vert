@@ -1,5 +1,7 @@
 #version 330 core
 layout (location = 0) in vec3 pos;
+layout (location = 1) in vec4 color;
+out vec4 outColor;
 uniform vec2 viewAngles;
 uniform vec2 sinViewAngles;
 uniform vec2 cosViewAngles;
@@ -38,4 +40,5 @@ void main() {
 	} else {
 		gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	}
+	outColor = color;
 }

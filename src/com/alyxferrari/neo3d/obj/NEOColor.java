@@ -12,7 +12,7 @@ public class NEOColor {
 		this(red, green, blue, 1.0f);
 	}
 	public NEOColor(float red, float green, float blue, float alpha) {
-		if (red > 0.0f && red < 1.0f && green > 0.0f && green < 1.0f && blue > 0.0f && blue < 1.0f && alpha > 0.0f && alpha < 1.0f) {
+		if (red >= 0.0f && red <= 1.0f && green >= 0.0f && green <= 1.0f && blue >= 0.0f && blue <= 1.0f && alpha >= 0.0f && alpha <= 1.0f) {
 			this.red = red;
 			this.green = green;
 			this.blue = blue;
