@@ -23,7 +23,7 @@ public class NEOEngine {
 	/** Current 3D compute device.
 	 */
 	protected static ComputeDevice device = ComputeDevice.CPU;
-	/** Current OpenGL shader ID.
+	/** Current OpenGL shader ID. Don't modify unless you know what you're doing.
 	 */
 	protected static int shader = 0;
 	/** Radius of imaginary sphere around origin.
@@ -118,8 +118,11 @@ public class NEOEngine {
 			int sinViewAngle2ID;
 			Runnable bufferPopulation;
 			if (device == ComputeDevice.CPU) { 
+				windowID = glGetUniformLocation(shader, "window");
 				bufferPopulation = () -> {
-					glBufferData(GL_ARRAY_BUFFER, cpuComputeAttribs(), GL_DYNAMIC_DRAW);
+					float[] attribs = cpuComputeAttribs();
+					glUniform2f(windowID, width, height);
+					glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
 				};
 			} else {
 				viewAnglesID = glGetUniformLocation(shader, "viewAngles");
@@ -130,9 +133,9 @@ public class NEOEngine {
 				sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
 				bufferPopulation = () -> {
 					float[] attribs = gpuComputeAttribs();
-					glUniform2f(viewAnglesID, viewAngleX, viewAngleY);
-					glUniform2f(sinViewAnglesID, (float)Math.sin(viewAngleX), (float)Math.sin(viewAngleY));
-					glUniform2f(cosViewAnglesID, (float)Math.cos(viewAngleX), (float)Math.cos(viewAngleY));
+					glUniform2f(viewAnglesID, viewAngles.viewAngleX, viewAngles.viewAngleY);
+					glUniform2f(sinViewAnglesID, viewAngles.sinViewAngleX, viewAngles.sinViewAngleY);
+					glUniform2f(cosViewAnglesID, viewAngles.cosViewAngleX, viewAngles.cosViewAngleY);
 					glUniform2f(windowID, width, height);
 					glUniform1f(camDistID, camDist);
 					glUniform1f(sinViewAngle2ID, (float)Math.sin(viewAngle/2.0f));
@@ -174,7 +177,7 @@ public class NEOEngine {
 	protected static void setVertexAttributePointers() {
 		if (device == ComputeDevice.CPU) {
 			// location = 0
-			// 3 values for point
+			// 2 values for point
 			// primitive type
 			// is normalized?
 			// how many bytes for all attribs together
@@ -202,13 +205,9 @@ public class NEOEngine {
 	/** Calculates the view angles based on the mouse position.
 	 */
 	protected static void calculateViewAngles() {
-		viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
-		viewAngleY = -((mouseY-height)/2)/SENSITIVITY;
-		if (viewAngleY > Math.PI) {
-			viewAngleY = (float) Math.PI;
-		} else if (viewAngleY < -Math.PI) {
-			viewAngleY = (float) -Math.PI;
-		}
+		float viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
+		float viewAngleY = NEOMath.clamp(-((mouseY-height)/2)/SENSITIVITY, -NEOMath.PI, NEOMath.PI);
+		viewAngles = new ViewAngle(viewAngleX, viewAngleY);
 	}
 	/** Computes vertex attributes on the GPU.
 	 * @return The vertex attributes to be passed onto the vertex shader.
@@ -250,31 +249,24 @@ public class NEOEngine {
 				for (int z = 0; z < vertices.length; z++) {
 					Vector3D vertex = vertices[z];
 					NEOColor color = vertex.getColor();
-					float zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
-					if (vertex.getX() == 0.0f && vertex.getZ() == 0.0f) {
-						zAngle = 0.0f;
-					}
-					float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
-					float xTransform = (float)(mag*SCALE*Math.cos(viewAngleX-zAngle));
-					float yTransform = (float)(mag*SCALE*Math.sin(viewAngleX-zAngle)*Math.sin(viewAngleY)+vertex.getY()*SCALE*Math.cos(viewAngleY));
-					if (vertex.getX() < 0.0f) {
-						xTransform *= -1.0f;
-						yTransform *= -1.0f;
-					}
-					if (vertex.getZ()*Math.cos(viewAngleX)*Math.cos(viewAngleY)+vertex.getX()*Math.sin(viewAngleX)*Math.cos(viewAngleY)-vertex.getY()*Math.sin(viewAngleY) < camDist) {
+					if (vertex.getZ()*viewAngles.cosViewAngleX*viewAngles.cosViewAngleY+vertex.getX()*viewAngles.sinViewAngleX*viewAngles.cosViewAngleY-vertex.getY()*viewAngles.sinViewAngleY < camDist) {
+						float zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
+						if (vertex.getX() == 0.0f && vertex.getZ() == 0.0f) {
+							zAngle = 0.0f;
+						}
+						float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
+						float xTransform = (float)(mag*SCALE*Math.cos(viewAngles.viewAngleX-zAngle));
+						float yTransform = (float)(mag*SCALE*Math.sin(viewAngles.viewAngleX-zAngle)*viewAngles.sinViewAngleY+vertex.getY()*SCALE*viewAngles.cosViewAngleY);
+						if (vertex.getX() < 0.0f) {
+							xTransform *= -1.0f;
+							yTransform *= -1.0f;
+						}
 						Vector3D cam = getCameraPositionActual();
 						float distance = hypot3(cam.getX()-vertex.getX(), cam.getY()-vertex.getY(), cam.getZ()-vertex.getZ());
 						float theta = (float) Math.asin((Math.hypot(xTransform, yTransform)/SCALE)/distance);
 						float camScale = (float)(distance*Math.cos(theta)*Math.sin(viewAngle/2.0f));
 						float ptX = width/2.0f+xTransform/camScale;
 						float ptY = height/2.0f-yTransform/camScale;
-						ptX /= width;
-						ptY /= height;
-						ptX *= 2.0f;
-						ptY *= 2.0f;
-						ptX -= 1.0f;
-						ptY -= 1.0f;
-						ptY *= -1.0f;
 						attribs.add(ptX);
 						attribs.add(ptY);
 						attribs.add(color.getRed());
@@ -295,9 +287,9 @@ public class NEOEngine {
 	/** Calculates the position of the camera in 3D space based on the view angles.
 	 */
 	public static Vector3D getCameraPositionActual() {
-		float x = (float)(Math.sin(viewAngleX)*Math.cos(viewAngleY)*camDist);
-		float y = (float)-((Math.sin(viewAngleY)*camDist));
-		float z = (float)(Math.cos(viewAngleX)*Math.cos(viewAngleY)*camDist);
+		float x = viewAngles.sinViewAngleX*viewAngles.cosViewAngleY*camDist;
+		float y = -(viewAngles.sinViewAngleY*camDist);
+		float z = viewAngles.cosViewAngleX*viewAngles.cosViewAngleY*camDist;
 		return new Vector3D(x, y, z);
 	}
 	/** GLFW input processing.
