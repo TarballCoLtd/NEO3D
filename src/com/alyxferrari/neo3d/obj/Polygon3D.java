@@ -104,6 +104,12 @@ public class Polygon3D {
 		}
 		return this;
 	}
+	public Polygon3D setRainbow() {
+		vertices[0].setColor(NEOColor.RED);
+		vertices[1].setColor(NEOColor.GREEN);
+		vertices[2].setColor(NEOColor.BLUE);
+		return this;
+	}
 	@Override
 	public String toString() {
 		String ret = "{";

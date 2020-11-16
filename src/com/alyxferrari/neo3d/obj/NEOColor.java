@@ -1,6 +1,11 @@
 package com.alyxferrari.neo3d.obj;
 import com.alyxferrari.neo3d.exc.*;
 public class NEOColor {
+	public static final NEOColor RED = new NEOColor(1.0f, 0.0f, 0.0f);
+	public static final NEOColor GREEN = new NEOColor(0.0f, 1.0f, 0.0f);
+	public static final NEOColor BLUE = new NEOColor(0.0f, 0.0f, 1.0f);
+	public static final NEOColor WHITE = new NEOColor(1.0f);
+	public static final NEOColor BLACK = new NEOColor(0.0f);
 	protected float red;
 	protected float green;
 	protected float blue;

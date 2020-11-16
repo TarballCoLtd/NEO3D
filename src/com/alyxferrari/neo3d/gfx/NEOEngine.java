@@ -162,7 +162,7 @@ public class NEOEngine {
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
 				bufferPopulation.run(); // populates buffers and uniforms based on compute device (see above)
-				glDrawArrays(GL_TRIANGLES, 0, 3);
+				glDrawArrays(GL_TRIANGLES, 0, 6);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
 				fps++;
