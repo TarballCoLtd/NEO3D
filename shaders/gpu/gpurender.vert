@@ -15,8 +15,8 @@ void main() {
 			zAngle = atan(pos.z/pos.x);
 		}
 		float mag = sqrt(pow(pos.x, 2)+pow(pos.z, 2));
-		float xTransform = mag*100*cos(viewAngles.x-zAngle);
-		float yTransform = mag*100*sin(viewAngles.x-zAngle)*sinViewAngles.y+pos.y*100*cosViewAngles.y;
+		float xTransform = mag*100*cos(viewAngles.x+zAngle);
+		float yTransform = mag*100*sin(viewAngles.x+zAngle)*sinViewAngles.y+pos.y*100*cosViewAngles.y;
 		if (pos.x < 0.0f) {
 			xTransform *= -1.0f;
 			yTransform *= -1.0f;
