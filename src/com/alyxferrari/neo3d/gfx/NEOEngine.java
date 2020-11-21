@@ -261,8 +261,8 @@ public class NEOEngine {
 							zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
 						}
 						float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
-						float xTransform = (float)(mag*SCALE*Math.cos(viewAngles.viewAngleX-zAngle));
-						float yTransform = (float)(mag*SCALE*Math.sin(viewAngles.viewAngleX-zAngle)*viewAngles.sinViewAngleY+vertex.getY()*SCALE*viewAngles.cosViewAngleY);
+						float xTransform = (float)(mag*SCALE*Math.cos(viewAngles.viewAngleX+zAngle));
+						float yTransform = (float)(mag*SCALE*Math.sin(viewAngles.viewAngleX+zAngle)*viewAngles.sinViewAngleY+vertex.getY()*SCALE*viewAngles.cosViewAngleY);
 						if (vertex.getX() < 0.0f) {
 							xTransform *= -1.0f;
 							yTransform *= -1.0f;
