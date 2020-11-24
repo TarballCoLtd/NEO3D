@@ -28,7 +28,7 @@ public class NEOEngine {
 	protected static int shader = 0;
 	/** Radius of imaginary sphere around origin.
 	 */
-	protected static float camDist = 300.0f;
+	protected static float camDist = 3.0f;
 	/** FOV in radians.
 	 */
 	protected static float viewAngle = (float) Math.toRadians(80);
@@ -47,9 +47,6 @@ public class NEOEngine {
 	/** Current height of GLFW window.
 	 */
 	protected static int height = 0;
-	/** Used internally. Count of how many vertices are in the current environment. Updated every frame.
-	 */
-	protected static int count = 0;
 	protected static final float SENSITIVITY = 100.0f;
 	protected static final float SCALE = 100.0f;
 	private NEOEngine() {}
@@ -165,7 +162,7 @@ public class NEOEngine {
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
 				bufferPopulation.run(); // populates buffers and uniforms based on compute device (see above)
-				glDrawArrays(GL_TRIANGLES, 0, count);
+				glDrawArrays(GL_TRIANGLES, 0, 6);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
 				fps++;
@@ -217,7 +214,6 @@ public class NEOEngine {
 	 */
 	protected static float[] gpuComputeAttribs() {
 		calculateViewAngles();
-		count = 0;
 		ArrayList<Float> attribs = new ArrayList<Float>();
 		Object3D[] objects = environment.getObjects();
 		for (int x = 0; x < objects.length; x++) {
@@ -234,7 +230,6 @@ public class NEOEngine {
 					attribs.add(color.getGreen());
 					attribs.add(color.getBlue());
 					attribs.add(color.getAlpha());
-					count++;
 				}
 			}
 		}
@@ -245,7 +240,6 @@ public class NEOEngine {
 	 */
 	protected static float[] cpuComputeAttribs() {
 		calculateViewAngles();
-		count = 0;
 		ArrayList<Float> attribs = new ArrayList<Float>();
 		Object3D[] objects = environment.getObjects();
 		for (int x = 0; x < objects.length; x++) {
@@ -279,7 +273,6 @@ public class NEOEngine {
 						attribs.add(color.getGreen());
 						attribs.add(color.getBlue());
 						attribs.add(color.getAlpha());
-						count++;
 					}
 				}
 			}

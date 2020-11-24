@@ -22,7 +22,7 @@ void main() {
 			yTransform *= -1.0f;
 		}
 		float x = sinViewAngles.x*cosViewAngles.y*camDist;
-		float y = -sinViewAngles.y*camDist;
+		float y = -(sinViewAngles.y*camDist);
 		float z = cosViewAngles.x*cosViewAngles.y*camDist;
 		float distance = sqrt(pow(x-pos.x, 2)+pow(y-pos.y, 2)+pow(z-pos.z, 2));
 		float theta = asin((sqrt(pow(xTransform, 2)+pow(yTransform, 2))/100)/distance);
