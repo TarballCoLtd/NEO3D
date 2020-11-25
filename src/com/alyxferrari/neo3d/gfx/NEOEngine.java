@@ -28,7 +28,7 @@ public class NEOEngine {
 	protected static int shader = 0;
 	/** Radius of imaginary sphere around origin.
 	 */
-	protected static float camDist = 3.0f;
+	protected static float camDist = 1000.0f;
 	/** FOV in radians.
 	 */
 	protected static float viewAngle = (float) Math.toRadians(80);
@@ -150,7 +150,7 @@ public class NEOEngine {
 			long lastLoopTime = System.nanoTime();
 			int fps = 0;
 			while (!glfwWindowShouldClose(window)) {
-				long now = System.nanoTime();
+				long now = System.nanoTime(); // i hate this style of fps counter but whatever it works
 				long updateLength = now-lastLoopTime;
 				lastLoopTime = now;
 				lastFpsTime += updateLength;
@@ -162,7 +162,7 @@ public class NEOEngine {
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
 				bufferPopulation.run(); // populates buffers and uniforms based on compute device (see above)
-				glDrawArrays(GL_TRIANGLES, 0, 6);
+				glDrawArrays(GL_TRIANGLES, 0, 2082*3);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
 				fps++;

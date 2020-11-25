@@ -1,4 +1,5 @@
 #version 330 core
+#define SCALE 100
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 out vec4 outColor;
@@ -10,16 +11,19 @@ uniform float camDist;
 uniform float sinViewAngle2;
 void main() {
 	if (pos.z*cosViewAngles.x*cosViewAngles.y+pos.x*sinViewAngles.x*cosViewAngles.y-pos.y*sinViewAngles.y < camDist) {
-		float zAngle = 0.0f;
+		float zAngle = 0.0;
 		if (pos.x != 0.0f || pos.z != 0.0f) {
 			zAngle = atan(pos.z/pos.x);
 		}
 		float mag = sqrt(pow(pos.x, 2)+pow(pos.z, 2));
-		float xTransform = mag*100*cos(viewAngles.x+zAngle);
-		float yTransform = mag*100*sin(viewAngles.x+zAngle)*sinViewAngles.y+pos.y*100*cosViewAngles.y;
+		float xTransform;
+		float yTransform;
 		if (pos.x < 0.0f) {
-			xTransform *= -1.0f;
-			yTransform *= -1.0f;
+			xTransform = -mag*SCALE*cos(viewAngles.x+zAngle);
+			yTransform = -mag*SCALE*sin(viewAngles.x+zAngle)*sinViewAngles.y+pos.y*SCALE*cosViewAngles.y;
+		} else {
+			xTransform = mag*SCALE*cos(viewAngles.x+zAngle);
+			yTransform = mag*SCALE*sin(viewAngles.x+zAngle)*sinViewAngles.y+pos.y*SCALE*cosViewAngles.y;
 		}
 		float x = sinViewAngles.x*cosViewAngles.y*camDist;
 		float y = -(sinViewAngles.y*camDist);
