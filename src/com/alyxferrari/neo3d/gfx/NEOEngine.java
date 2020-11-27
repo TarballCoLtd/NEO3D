@@ -111,7 +111,7 @@ public class NEOEngine {
 			int sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
 			int camPosID = glGetUniformLocation(shader, "camPos");
 			Runnable bufferPopulator = () -> {
-				float[] attribs = gpuComputeAttribs();
+				float[] attribs = computeAttribs();
 				glUniform2f(viewAnglesID, viewAngles.viewAngleX, viewAngles.viewAngleY);
 				glUniform2f(sinViewAnglesID, viewAngles.sinViewAngleX, viewAngles.sinViewAngleY);
 				glUniform2f(cosViewAnglesID, viewAngles.cosViewAngleX, viewAngles.cosViewAngleY);
@@ -179,7 +179,7 @@ public class NEOEngine {
 	/** Computes vertex attributes on the GPU.
 	 * @return The vertex attributes to be passed onto the vertex shader.
 	 */
-	protected static float[] gpuComputeAttribs() {
+	protected static float[] computeAttribs() {
 		calculateViewAngles();
 		ArrayList<Float> attribs = new ArrayList<Float>();
 		for (int x = 0; x < environment.getPolygons().length; x++) {
@@ -206,54 +206,6 @@ public class NEOEngine {
 			}
 		}
 		return toArray(attribs);
-	}
-	/** Computes vertex attributes on the CPU.
-	 * @return The vertex attributes to be passed onto the vertex shader.
-	 */
-	protected static float[] cpuComputeAttribs() {
-		calculateViewAngles();
-		ArrayList<Float> attribs = new ArrayList<Float>();
-		Object3D[] objects = environment.getObjects();
-		for (int x = 0; x < objects.length; x++) {
-			Polygon3D[] polygons = objects[x].getPolygons();
-			for (int y = 0; y < polygons.length; y++) {
-				Vector3D[] vertices = polygons[y].getVertices();
-				for (int z = 0; z < vertices.length; z++) {
-					Vector3D vertex = vertices[z];
-					NEOColor color = vertex.getColor();
-					if (vertex.getZ()*viewAngles.cosViewAngleX*viewAngles.cosViewAngleY+vertex.getX()*viewAngles.sinViewAngleX*viewAngles.cosViewAngleY-vertex.getY()*viewAngles.sinViewAngleY < camDist) {
-						float zAngle = 0.0f;
-						if (vertex.getX() != 0.0f || vertex.getZ() != 0.0f) {
-							zAngle = (float) Math.atan(vertex.getZ()/vertex.getX());
-						}
-						float mag = (float) Math.hypot(vertex.getX(), vertex.getZ());
-						float xTransform = (float)(mag*SCALE*Math.cos(viewAngles.viewAngleX+zAngle));
-						float yTransform = (float)(mag*SCALE*Math.sin(viewAngles.viewAngleX+zAngle)*viewAngles.sinViewAngleY+vertex.getY()*SCALE*viewAngles.cosViewAngleY);
-						if (vertex.getX() < 0.0f) {
-							xTransform *= -1.0f;
-							yTransform *= -1.0f;
-						}
-						float distance = hypot3(cam.getX()-vertex.getX(), cam.getY()-vertex.getY(), cam.getZ()-vertex.getZ());
-						float theta = (float) Math.asin((Math.hypot(xTransform, yTransform)/SCALE)/distance);
-						float camScale = (float)(distance*Math.cos(theta)*Math.sin(viewAngle/2.0f));
-						float ptX = width/2.0f+xTransform/camScale;
-						float ptY = height/2.0f-yTransform/camScale;
-						attribs.add(ptX);
-						attribs.add(ptY);
-						attribs.add(color.getRed());
-						attribs.add(color.getGreen());
-						attribs.add(color.getBlue());
-						attribs.add(color.getAlpha());
-					}
-				}
-			}
-		}
-		return toArray(attribs);
-	}
-	/** Used internally. 3D equivalent of Math.hypot(double, double).
-	 */
-	protected static float hypot3(float x, float y, float z) {
-		return (float) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
 	}
 	/** Calculates the position of the camera in 3D space based on the view angles.
 	 */
