@@ -20,9 +20,6 @@ public class NEOEngine {
 	/** GLFW window ID. Don't modify unless you know what you're doing.
 	 */
 	protected static long window = NULL;
-	/** Current 3D compute device.
-	 */
-	protected static ComputeDevice device = ComputeDevice.GPU;
 	/** Current OpenGL shader ID. Don't modify unless you know what you're doing.
 	 */
 	protected static int shader = 0;
@@ -57,7 +54,7 @@ public class NEOEngine {
 	 * @throws IOException If loading the shader files fails.
 	 */
 	public static void initialize() throws IOException {
-		initialize(new Environment3D(), ComputeDevice.GPU, null, new Dimension(800, 600));
+		initialize(new Environment3D(), null, new Dimension(800, 600));
 	}
 	/** Initializes OpenGL and GLFW and sets up the NEO3D renderer with the specified environment.
 	 * @param environment The 3D environment.
@@ -66,14 +63,13 @@ public class NEOEngine {
 	 * @param size Desired size for the window.
 	 * @throws IOException If loading the shader files fails.
 	 */
-	public static void initialize(Environment3D environment, ComputeDevice device, String title, Dimension size) throws IOException {
+	public static void initialize(Environment3D environment, String title, Dimension size) throws IOException {
 		if (window == NULL) {
 			if (glfwInit()) {
 				glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 				window = glfwCreateWindow((int)size.getWidth(), (int)size.getHeight(), title == null || title.equals("") ? WINDOW_SUFFIX : title + " -- " + WINDOW_SUFFIX, NULL, NULL); // is the title null? if so, don't add the dashes
 				if (window != NULL) {
 					NEOEngine.environment = environment;
-					NEOEngine.device = device;
 					width = (int) size.getWidth();
 					height = (int) size.getHeight();
 					glfwSetCursorPosCallback(window, NEOEngine::cursorPositionCallback);
@@ -81,13 +77,7 @@ public class NEOEngine {
 					glfwSetMouseButtonCallback(window, NEOEngine::mouseButtonCallback);
 					glfwMakeContextCurrent(window);
 					GL.createCapabilities();
-					if (device == ComputeDevice.CPU) {
-						shader = ShaderUtils.createProgram(new File("shaders/cpu/cpurender.vert"), new File("shaders/cpu/cpurender.frag"));
-					} else if (device == ComputeDevice.GPU) {
-						shader = ShaderUtils.createProgram(new File("shaders/gpu/gpurender.vert"), new File("shaders/gpu/gpurender.frag"));
-					} else {
-						throw new IllegalArgumentException("Compute device must not be null.");
-					}
+					shader = ShaderUtils.createProgram(new File("shaders/render.vert"), new File("shaders/render.frag"));
 					glfwMakeContextCurrent(NULL);
 					return;
 				}
@@ -113,41 +103,24 @@ public class NEOEngine {
 			glBindVertexArray(vao);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo);
 			setVertexAttributePointers();
-			int viewAnglesID;
-			int sinViewAnglesID;
-			int cosViewAnglesID;
-			int windowID;
-			int camDistID;
-			int sinViewAngle2ID;
-			int camPosID;
-			Runnable bufferPopulator;
-			if (device == ComputeDevice.CPU) { 
-				windowID = glGetUniformLocation(shader, "window");
-				bufferPopulator = () -> {
-					float[] attribs = cpuComputeAttribs();
-					glUniform2f(windowID, width, height);
-					glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
-				};
-			} else {
-				viewAnglesID = glGetUniformLocation(shader, "viewAngles");
-				sinViewAnglesID = glGetUniformLocation(shader, "sinViewAngles");
-				cosViewAnglesID = glGetUniformLocation(shader, "cosViewAngles");
-				windowID = glGetUniformLocation(shader, "window");
-				camDistID = glGetUniformLocation(shader, "camDist");
-				sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
-				camPosID = glGetUniformLocation(shader, "camPos");
-				bufferPopulator = () -> {
-					float[] attribs = gpuComputeAttribs();
-					glUniform2f(viewAnglesID, viewAngles.viewAngleX, viewAngles.viewAngleY);
-					glUniform2f(sinViewAnglesID, viewAngles.sinViewAngleX, viewAngles.sinViewAngleY);
-					glUniform2f(cosViewAnglesID, viewAngles.cosViewAngleX, viewAngles.cosViewAngleY);
-					glUniform2f(windowID, width, height);
-					glUniform1f(camDistID, camDist);
-					glUniform1f(sinViewAngle2ID, (float)Math.sin(viewAngle/2.0f));
-					glUniform3f(camPosID, cam.getX(), cam.getY(), cam.getZ());
-					glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
-				};
-			}
+			int viewAnglesID = glGetUniformLocation(shader, "viewAngles");
+			int sinViewAnglesID = glGetUniformLocation(shader, "sinViewAngles");
+			int cosViewAnglesID = glGetUniformLocation(shader, "cosViewAngles");
+			int windowID = glGetUniformLocation(shader, "window");
+			int camDistID = glGetUniformLocation(shader, "camDist");
+			int sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
+			int camPosID = glGetUniformLocation(shader, "camPos");
+			Runnable bufferPopulator = () -> {
+				float[] attribs = gpuComputeAttribs();
+				glUniform2f(viewAnglesID, viewAngles.viewAngleX, viewAngles.viewAngleY);
+				glUniform2f(sinViewAnglesID, viewAngles.sinViewAngleX, viewAngles.sinViewAngleY);
+				glUniform2f(cosViewAnglesID, viewAngles.cosViewAngleX, viewAngles.cosViewAngleY);
+				glUniform2f(windowID, width, height);
+				glUniform1f(camDistID, camDist);
+				glUniform1f(sinViewAngle2ID, (float)Math.sin(viewAngle/2.0f));
+				glUniform3f(camPosID, cam.getX(), cam.getY(), cam.getZ());
+				glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
+			};
 			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glfwShowWindow(window);
@@ -182,23 +155,10 @@ public class NEOEngine {
 	/** Sets the vertex attribute pointers for the current compute device.
 	 */
 	protected static void setVertexAttributePointers() {
-		if (device == ComputeDevice.CPU) {
-			// location = 0
-			// 2 values for point
-			// primitive type
-			// is normalized?
-			// how many bytes for all attribs together
-			// offset of this attrib
-			glVertexAttribPointer(0, 2, GL_FLOAT, false, 6 * SizeOf.FLOAT, 0);
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(1, 4, GL_FLOAT, false, 6 * SizeOf.FLOAT, 2 * SizeOf.FLOAT);
-			glEnableVertexAttribArray(1);
-		} else if (device == ComputeDevice.GPU) {
-			glVertexAttribPointer(0, 3, GL_FLOAT, false, 7 * SizeOf.FLOAT, 0);
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(1, 4, GL_FLOAT, false, 7 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
-			glEnableVertexAttribArray(1);
-		}
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, 7 * SizeOf.FLOAT, 0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, false, 7 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
+		glEnableVertexAttribArray(1);
 	}
 	/** Used internally. Converts a float ArrayList to a primitive float array.
 	 */
@@ -222,7 +182,6 @@ public class NEOEngine {
 	protected static float[] gpuComputeAttribs() {
 		calculateViewAngles();
 		ArrayList<Float> attribs = new ArrayList<Float>();
-		ArrayList<Float> dists = new ArrayList<Float>();
 		for (int x = 0; x < environment.getPolygons().length; x++) {
 			Vector3D[] vertices = environment.getPolygons()[x].getVertices();
 			float average = NEOMath.hypot3(cam.getX()-vertices[0].getX(), cam.getY()-vertices[0].getY(), cam.getZ()-vertices[0].getZ());

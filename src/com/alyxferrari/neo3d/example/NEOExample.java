@@ -1,5 +1,4 @@
 package com.alyxferrari.neo3d.example;
-import com.alyxferrari.neo3d.*;
 import com.alyxferrari.neo3d.gfx.*;
 import com.alyxferrari.neo3d.obj.*;
 import java.awt.*;
@@ -13,7 +12,7 @@ public class NEOExample {
 		Object3D[] objects = {Object3D.loadFromModel("cat.obj", new NEOColor(1.0f, 0.4f, 0.4f)).setRainbow()};
 		System.out.println(objects[0].getPolygonsLength());
 		Environment3D environment = new Environment3D(objects);
-		NEOEngine.initialize(environment, ComputeDevice.GPU, "NEO3D example", new Dimension(800, 600));
+		NEOEngine.initialize(environment, "NEO3D example", new Dimension(800, 600));
 		NEOEngine.startRender();
 	}
 }
