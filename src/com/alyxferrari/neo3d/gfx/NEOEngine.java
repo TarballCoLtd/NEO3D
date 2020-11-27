@@ -26,10 +26,10 @@ public class NEOEngine {
 	/** Current OpenGL shader ID. Don't modify unless you know what you're doing.
 	 */
 	protected static int shader = 0;
-	/** Radius of imaginary sphere around origin.
+	/** Radius of imaginary sphere around the origin.
 	 */
 	protected static float camDist = 1000.0f;
-	/** FOV in radians.
+	/** FOV in radians (not very accurate).
 	 */
 	protected static float viewAngle = (float) Math.toRadians(80);
 	/** Coordinates of camera position on imaginary sphere around the origin.
@@ -47,6 +47,9 @@ public class NEOEngine {
 	/** Current height of GLFW window.
 	 */
 	protected static int height = 0;
+	/** Current position of camera in 3D space.
+	 */
+	protected static Vector3D cam = new Vector3D(0.0f);
 	protected static final float SENSITIVITY = 100.0f;
 	protected static final float SCALE = 100.0f;
 	private NEOEngine() {}
@@ -56,7 +59,7 @@ public class NEOEngine {
 	public static void initialize() throws IOException {
 		initialize(new Environment3D(), ComputeDevice.GPU, null, new Dimension(800, 600));
 	}
-	/** Initializes OpenGL and GLFW and sets up the NEO3D renderer.
+	/** Initializes OpenGL and GLFW and sets up the NEO3D renderer with the specified environment.
 	 * @param environment The 3D environment.
 	 * @param device The device on which to do the 3D projection.
 	 * @param title Title for the window.
@@ -88,7 +91,7 @@ public class NEOEngine {
 					glfwMakeContextCurrent(NULL);
 					return;
 				}
-				// if the window is null
+				// if window == NULL (0x0)
 				glfwTerminate();
 				throw new GLFWWindowCreationError(GLFWWindowCreationError.RECOMMENDED_MESSAGE);
 			}
@@ -116,10 +119,11 @@ public class NEOEngine {
 			int windowID;
 			int camDistID;
 			int sinViewAngle2ID;
-			Runnable bufferPopulation;
+			int camPosID;
+			Runnable bufferPopulator;
 			if (device == ComputeDevice.CPU) { 
 				windowID = glGetUniformLocation(shader, "window");
-				bufferPopulation = () -> {
+				bufferPopulator = () -> {
 					float[] attribs = cpuComputeAttribs();
 					glUniform2f(windowID, width, height);
 					glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
@@ -131,7 +135,8 @@ public class NEOEngine {
 				windowID = glGetUniformLocation(shader, "window");
 				camDistID = glGetUniformLocation(shader, "camDist");
 				sinViewAngle2ID = glGetUniformLocation(shader, "sinViewAngle2");
-				bufferPopulation = () -> {
+				camPosID = glGetUniformLocation(shader, "camPos");
+				bufferPopulator = () -> {
 					float[] attribs = gpuComputeAttribs();
 					glUniform2f(viewAnglesID, viewAngles.viewAngleX, viewAngles.viewAngleY);
 					glUniform2f(sinViewAnglesID, viewAngles.sinViewAngleX, viewAngles.sinViewAngleY);
@@ -139,6 +144,7 @@ public class NEOEngine {
 					glUniform2f(windowID, width, height);
 					glUniform1f(camDistID, camDist);
 					glUniform1f(sinViewAngle2ID, (float)Math.sin(viewAngle/2.0f));
+					glUniform3f(camPosID, cam.getX(), cam.getY(), cam.getZ());
 					glBufferData(GL_ARRAY_BUFFER, attribs, GL_DYNAMIC_DRAW);
 				};
 			}
@@ -159,9 +165,10 @@ public class NEOEngine {
 					lastFpsTime = 0;
 					fps = 0;
 				}
+				setCameraPosition();
 				processInput(window);
 				glClear(GL_COLOR_BUFFER_BIT);
-				bufferPopulation.run(); // populates buffers and uniforms based on compute device (see above)
+				bufferPopulator.run(); // populates buffers and uniforms based on compute device (see above)
 				glDrawArrays(GL_TRIANGLES, 0, 2082*3);
 				glfwSwapBuffers(window);
 				glfwPollEvents();
@@ -215,22 +222,28 @@ public class NEOEngine {
 	protected static float[] gpuComputeAttribs() {
 		calculateViewAngles();
 		ArrayList<Float> attribs = new ArrayList<Float>();
-		Object3D[] objects = environment.getObjects();
-		for (int x = 0; x < objects.length; x++) {
-			Polygon3D[] polygons = objects[x].getPolygons();
-			for (int y = 0; y < polygons.length; y++) {
-				Vector3D[] vertices = polygons[y].getVertices();
-				for (int z = 0; z < vertices.length; z++) {
-					Vector3D vertex = vertices[z];
-					NEOColor color = vertex.getColor();
-					attribs.add(vertex.getX());
-					attribs.add(vertex.getY());
-					attribs.add(vertex.getZ());
-					attribs.add(color.getRed());
-					attribs.add(color.getGreen());
-					attribs.add(color.getBlue());
-					attribs.add(color.getAlpha());
-				}
+		ArrayList<Float> dists = new ArrayList<Float>();
+		for (int x = 0; x < environment.getPolygons().length; x++) {
+			Vector3D[] vertices = environment.getPolygons()[x].getVertices();
+			float average = NEOMath.hypot3(cam.getX()-vertices[0].getX(), cam.getY()-vertices[0].getY(), cam.getZ()-vertices[0].getZ());
+			average += NEOMath.hypot3(cam.getX()-vertices[1].getX(), cam.getY()-vertices[1].getY(), cam.getZ()-vertices[1].getZ());
+			average += NEOMath.hypot3(cam.getX()-vertices[2].getX(), cam.getY()-vertices[2].getY(), cam.getZ()-vertices[2].getZ());
+			average /= 3.0f;
+			environment.getPolygons()[x].setDistance(average);
+		}
+		Arrays.sort(environment.getPolygons(), Collections.reverseOrder());
+		for (int x = 0; x < environment.getPolygons().length; x++) {
+			Vector3D[] vertices = environment.getPolygons()[x].getVertices();
+			for (int y = 0; y < vertices.length; y++) {
+				Vector3D vertex = vertices[y];
+				NEOColor color = vertex.getColor();
+				attribs.add(vertex.getX());
+				attribs.add(vertex.getY());
+				attribs.add(vertex.getZ());
+				attribs.add(color.getRed());
+				attribs.add(color.getGreen());
+				attribs.add(color.getBlue());
+				attribs.add(color.getAlpha());
 			}
 		}
 		return toArray(attribs);
@@ -261,7 +274,6 @@ public class NEOEngine {
 							xTransform *= -1.0f;
 							yTransform *= -1.0f;
 						}
-						Vector3D cam = getCameraPositionActual();
 						float distance = hypot3(cam.getX()-vertex.getX(), cam.getY()-vertex.getY(), cam.getZ()-vertex.getZ());
 						float theta = (float) Math.asin((Math.hypot(xTransform, yTransform)/SCALE)/distance);
 						float camScale = (float)(distance*Math.cos(theta)*Math.sin(viewAngle/2.0f));
@@ -286,11 +298,11 @@ public class NEOEngine {
 	}
 	/** Calculates the position of the camera in 3D space based on the view angles.
 	 */
-	public static Vector3D getCameraPositionActual() {
+	public static void setCameraPosition() {
 		float x = viewAngles.sinViewAngleX*viewAngles.cosViewAngleY*camDist;
-		float y = -(viewAngles.sinViewAngleY*camDist);
+		float y = -viewAngles.sinViewAngleY*camDist;
 		float z = viewAngles.cosViewAngleX*viewAngles.cosViewAngleY*camDist;
-		return new Vector3D(x, y, z);
+		cam = new Vector3D(x, y, z);
 	}
 	/** GLFW input processing.
 	 */

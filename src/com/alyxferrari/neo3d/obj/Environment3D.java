@@ -8,6 +8,9 @@ public class Environment3D {
 	/** List of objects in this environment.
 	 */
 	protected Object3D[] objects;
+	/** Used internally. Part of NEO3D's face sorting algorithm.
+	 */
+	protected Polygon3D[] polygons;
 	public Environment3D() {
 		this.objects = null;
 	}
@@ -24,6 +27,7 @@ public class Environment3D {
 			}
 		}
 		this.objects = objects;
+		rebuild();
 	}
 	/**
 	 * @return This environment's objects.
@@ -64,6 +68,7 @@ public class Environment3D {
 			}
 		}
 		this.objects = objects;
+		rebuild();
 		return this;
 	}
 	/** Sets the {@code index}-th object in this environment.
@@ -79,6 +84,24 @@ public class Environment3D {
 			throw new IllegalArgumentException("The object must not be null.");
 		}
 		objects[index] = object;
+		rebuild();
 		return this;
+	}
+	/** Used internally. Part of NEO3D's face sorting algorithm.
+	 */
+	public Polygon3D[] getPolygons() {
+		return polygons;
+	}
+	protected void rebuild() {
+		ArrayList<Polygon3D> ret = new ArrayList<Polygon3D>();
+		for (int x = 0; x < objects.length; x++) {
+			for (int y = 0; y < objects[x].polygons.length; y++) {
+				ret.add(objects[x].polygons[y]);
+			}
+		}
+		polygons = new Polygon3D[ret.size()];
+		for (int i = 0; i < polygons.length; i++) {
+			polygons[i] = ret.get(i);
+		}
 	}
 }

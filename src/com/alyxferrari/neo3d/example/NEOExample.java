@@ -10,7 +10,7 @@ public class NEOExample {
 		//Vector3D[] vertices2 = {new Vector3D(-1.0f, 1.0f, -1.0f, new NEOColor(1.0f, 0.0f, 0.0f)), new Vector3D(1.0f, 1.0f, -1.0f, new NEOColor(0.0f, 1.0f, 0.0f)), new Vector3D(0.0f, 1.0f, 1.0f, new NEOColor(0.0f, 0.0f, 1.0f))};
 		//Polygon3D[] polygons = {new Polygon3D(vertices), new Polygon3D(vertices2)};
 		//Object3D[] objects = {new Object3D(polygons)};
-		Object3D[] objects = {Object3D.loadFromModel("C:/cat.obj", new NEOColor(1.0f, 0.4f, 0.4f))};
+		Object3D[] objects = {Object3D.loadFromModel("cat.obj", new NEOColor(1.0f, 0.4f, 0.4f)).setRainbow()};
 		System.out.println(objects[0].getPolygonsLength());
 		Environment3D environment = new Environment3D(objects);
 		NEOEngine.initialize(environment, ComputeDevice.GPU, "NEO3D example", new Dimension(800, 600));

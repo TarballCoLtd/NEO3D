@@ -1,6 +1,7 @@
 package com.alyxferrari.neo3d.obj;
 import java.util.*;
 import java.io.*;
+import com.alyxferrari.neo3d.gfx.*;
 import com.mokiat.data.front.parser.*;
 /** Represents an object in 3D space.
  * @author Alyx Ferrari
@@ -57,6 +58,7 @@ public class Object3D {
 			}
 		}
 		this.polygons = polygons;
+		NEOEngine.getEnvironment().rebuild();
 		return this;
 	}
 	/** Sets the {@code index}-th polygon in this object.
@@ -72,6 +74,7 @@ public class Object3D {
 			throw new IllegalArgumentException("The polygon must not be null.");
 		}
 		polygons[index] = polygon;
+		NEOEngine.getEnvironment().rebuild();
 		return this;
 	}
 	public static Object3D loadFromModel(String path) throws IOException {
@@ -106,5 +109,11 @@ public class Object3D {
 			ret[i] = polygons.get(i);
 		}
 		return new Object3D(ret);
+	}
+	public Object3D setRainbow() {
+		for (int i = 0; i < polygons.length; i++) {
+			polygons[i].setRainbow();
+		}
+		return this;
 	}
 }

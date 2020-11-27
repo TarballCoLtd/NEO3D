@@ -4,10 +4,13 @@ import java.util.*;
  * @author Alyx Ferrari
  * @since 1.0 alpha
  */
-public class Polygon3D {
+public class Polygon3D implements Comparable<Polygon3D> {
 	/** List of vertices in this polygon.
 	 */
 	protected Vector3D[] vertices;
+	/** Distance to camera. Updated every frame.
+	 */
+	protected float distance;
 	/** Constructs a new polygon containing the specified vertices.
 	 * @param vertices The vertices with which to construct this polygon.
 	 */
@@ -121,5 +124,19 @@ public class Polygon3D {
 		}
 		ret += "}";
 		return ret;
+	}
+	@Override
+	public int compareTo(Polygon3D polygon) {
+		if (distance > polygon.distance) {
+			return 1;
+		} else if (distance == polygon.distance) {
+			return 0;
+		}
+		return -1;
+	}
+	/** Used internally. Part of NEO3D's face sorting algorithm.
+	 */
+	public void setDistance(float distance) {
+		this.distance = distance;
 	}
 }
