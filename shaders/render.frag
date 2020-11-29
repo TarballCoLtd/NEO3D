@@ -10,22 +10,10 @@ uniform float lightZs[8];
 uniform float strengths[8];
 uniform int count;
 uniform float ambience;
-vec3 vecCross(in vec3 cross1, in vec3 cross2) {
-	return vec3((cross1.y*cross2.z)-(cross1.z*cross2.y), (cross1.z*cross2.x)-(cross1.x*cross2.z), (cross1.x*cross2.y)-(cross1.y*cross2.x));
-}
-float hypot3(in vec3 hypo) {
-	return sqrt(pow(hypo.x, 2)+pow(hypo.y, 2)+pow(hypo.z, 2));
-}
-vec3 normalize(in vec3 normal) {
-	return normal / hypot3(normal);
-}
-vec3 cross(in vec3 cross1, in vec3 cross2, in vec3 cross3) {
+vec3 customCross(in vec3 cross1, in vec3 cross2, in vec3 cross3) {
 	vec3 two = vec3(cross2.x-cross1.x, cross2.y-cross1.y, cross2.z-cross1.z);
 	vec3 three = vec3(cross3.x-cross1.x, cross3.y-cross1.y, cross3.z-cross1.z);
-	return normalize(vecCross(two, three));
-}
-float dot(in vec3 dot1, in vec3 dot2) {
-	return (dot1.x*dot2.x)+(dot1.y*dot2.y)+(dot1.z*dot2.z);
+	return normalize(cross(two, three));
 }
 void main() {
 	if (count == 0) {
@@ -35,7 +23,7 @@ void main() {
 	vec3 finalColor = vec3(0.0);
 	for (int i = 0; i < count; i++) {
 		vec3 light = vec3(lightXs[i], lightYs[i], lightZs[i]);
-		float dot = dot(cross(fragPos, adjacent1, adjacent2), light)*strengths[i];
+		float dot = dot(customCross(fragPos, adjacent1, adjacent2), light)*strengths[i];
 		if (dot > 0.0) {
 			vec3 col = vec3((outColor.r*dot)+(outColor.r*ambience), (outColor.g*dot)+(outColor.g*ambience), (outColor.b*dot)+(outColor.b*ambience));
 			col.r = col.r < 512.0 ? 512.0 : col.r;
