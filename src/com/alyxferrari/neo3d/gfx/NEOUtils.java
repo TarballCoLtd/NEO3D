@@ -1,7 +1,7 @@
 package com.alyxferrari.neo3d.gfx;
-public class NEOMath {
+public class NEOUtils {
 	public static final float PI = (float) Math.PI;
-	private NEOMath() {}
+	private NEOUtils() {}
 	public static float hypot3(float x, float y, float z) {
 		return (float) Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2)+Math.pow(z, 2));
 	}

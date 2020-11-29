@@ -103,6 +103,8 @@ public class NEOEngine {
 			glBindVertexArray(vao);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo);
 			setVertexAttributePointers();
+			environment.rebuildLights();
+			
 			int viewAnglesID = glGetUniformLocation(shader, "viewAngles");
 			int sinViewAnglesID = glGetUniformLocation(shader, "sinViewAngles");
 			int cosViewAnglesID = glGetUniformLocation(shader, "cosViewAngles");
@@ -155,10 +157,19 @@ public class NEOEngine {
 	/** Sets the vertex attribute pointers for the current compute device.
 	 */
 	protected static void setVertexAttributePointers() {
-		glVertexAttribPointer(0, 3, GL_FLOAT, false, 7 * SizeOf.FLOAT, 0);
+		// location = 0
+		// how many floats in attrib
+		// type of attrib data
+		// normalized?
+		// total size of all attribs
+		// offset of this attrib
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, 13 * SizeOf.FLOAT, 0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, false, 7 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
+		glVertexAttribPointer(1, 4, GL_FLOAT, false, 13 * SizeOf.FLOAT, 3 * SizeOf.FLOAT);
 		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 3, GL_FLOAT, false, 13 * SizeOf.FLOAT, 7 * SizeOf.FLOAT);
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(3, 3, GL_FLOAT, false, 13 * SizeOf.FLOAT, 10 * SizeOf.FLOAT);
 	}
 	/** Used internally. Converts a float ArrayList to a primitive float array.
 	 */
@@ -173,7 +184,7 @@ public class NEOEngine {
 	 */
 	protected static void calculateViewAngles() {
 		float viewAngleX = -((mouseX-width)/2)/SENSITIVITY;
-		float viewAngleY = NEOMath.clamp(-((mouseY-height)/2)/SENSITIVITY, -NEOMath.PI*0.5f, NEOMath.PI*0.5f);
+		float viewAngleY = NEOUtils.clamp(-((mouseY-height)/2)/SENSITIVITY, -NEOUtils.PI*0.5f, NEOUtils.PI*0.5f);
 		viewAngles = new ViewAngle(viewAngleX, viewAngleY);
 	}
 	/** Computes vertex attributes on the GPU.
@@ -184,26 +195,58 @@ public class NEOEngine {
 		ArrayList<Float> attribs = new ArrayList<Float>();
 		for (int x = 0; x < environment.getPolygons().length; x++) {
 			Vector3D[] vertices = environment.getPolygons()[x].getVertices();
-			float average = NEOMath.hypot3(cam.getX()-vertices[0].getX(), cam.getY()-vertices[0].getY(), cam.getZ()-vertices[0].getZ());
-			average += NEOMath.hypot3(cam.getX()-vertices[1].getX(), cam.getY()-vertices[1].getY(), cam.getZ()-vertices[1].getZ());
-			average += NEOMath.hypot3(cam.getX()-vertices[2].getX(), cam.getY()-vertices[2].getY(), cam.getZ()-vertices[2].getZ());
+			float average = NEOUtils.hypot3(cam.getX()-vertices[0].getX(), cam.getY()-vertices[0].getY(), cam.getZ()-vertices[0].getZ());
+			average += NEOUtils.hypot3(cam.getX()-vertices[1].getX(), cam.getY()-vertices[1].getY(), cam.getZ()-vertices[1].getZ());
+			average += NEOUtils.hypot3(cam.getX()-vertices[2].getX(), cam.getY()-vertices[2].getY(), cam.getZ()-vertices[2].getZ());
 			average /= 3.0f;
 			environment.getPolygons()[x].setDistance(average);
 		}
 		Arrays.sort(environment.getPolygons(), Collections.reverseOrder());
+		// yeah this is terrible but hard-coding it is more efficient than doing loops in this case
 		for (int x = 0; x < environment.getPolygons().length; x++) {
 			Vector3D[] vertices = environment.getPolygons()[x].getVertices();
-			for (int y = 0; y < vertices.length; y++) {
-				Vector3D vertex = vertices[y];
-				NEOColor color = vertex.getColor();
-				attribs.add(vertex.getX());
-				attribs.add(vertex.getY());
-				attribs.add(vertex.getZ());
-				attribs.add(color.getRed());
-				attribs.add(color.getGreen());
-				attribs.add(color.getBlue());
-				attribs.add(color.getAlpha());
-			}
+			// first vertex
+			attribs.add(vertices[0].getX()); // first attribute
+			attribs.add(vertices[0].getY());
+			attribs.add(vertices[0].getZ());
+			attribs.add(vertices[0].getColor().getRed()); // second attribute
+			attribs.add(vertices[0].getColor().getGreen());
+			attribs.add(vertices[0].getColor().getBlue());
+			attribs.add(vertices[0].getColor().getAlpha());
+			attribs.add(vertices[1].getX()); // third attribute
+			attribs.add(vertices[1].getY());
+			attribs.add(vertices[1].getZ());
+			attribs.add(vertices[2].getX()); // fourth attribute
+			attribs.add(vertices[2].getY());
+			attribs.add(vertices[2].getZ());
+			// second vertex
+			attribs.add(vertices[1].getX()); // first attribute
+			attribs.add(vertices[1].getY());
+			attribs.add(vertices[1].getZ());
+			attribs.add(vertices[1].getColor().getRed()); // second attribute
+			attribs.add(vertices[1].getColor().getGreen());
+			attribs.add(vertices[1].getColor().getBlue());
+			attribs.add(vertices[1].getColor().getAlpha());
+			attribs.add(vertices[0].getX()); // third attribute
+			attribs.add(vertices[0].getY());
+			attribs.add(vertices[0].getZ());
+			attribs.add(vertices[2].getX()); // fourth attribute
+			attribs.add(vertices[2].getY());
+			attribs.add(vertices[2].getZ());
+			// third vertex
+			attribs.add(vertices[2].getX()); // first attribute
+			attribs.add(vertices[2].getY());
+			attribs.add(vertices[2].getZ());
+			attribs.add(vertices[2].getColor().getRed()); // second attribute
+			attribs.add(vertices[2].getColor().getGreen());
+			attribs.add(vertices[2].getColor().getBlue());
+			attribs.add(vertices[2].getColor().getAlpha());
+			attribs.add(vertices[1].getX()); // third attribute
+			attribs.add(vertices[1].getY());
+			attribs.add(vertices[1].getZ());
+			attribs.add(vertices[0].getX()); // fourth attribute
+			attribs.add(vertices[0].getY());
+			attribs.add(vertices[0].getZ());
 		}
 		return toArray(attribs);
 	}
@@ -276,5 +319,11 @@ public class NEOEngine {
 			glfwTerminate();
 			window = NULL;
 		}
+	}
+	public static int getShader() {
+		return shader;
+	}
+	public static boolean isInitialized() {
+		return window != NULL;
 	}
 }

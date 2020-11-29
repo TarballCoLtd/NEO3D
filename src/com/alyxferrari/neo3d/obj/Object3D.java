@@ -58,7 +58,7 @@ public class Object3D {
 			}
 		}
 		this.polygons = polygons;
-		NEOEngine.getEnvironment().rebuild();
+		NEOEngine.getEnvironment().rebuildPolygons();
 		return this;
 	}
 	/** Sets the {@code index}-th polygon in this object.
@@ -74,7 +74,7 @@ public class Object3D {
 			throw new IllegalArgumentException("The polygon must not be null.");
 		}
 		polygons[index] = polygon;
-		NEOEngine.getEnvironment().rebuild();
+		NEOEngine.getEnvironment().rebuildPolygons();
 		return this;
 	}
 	public static Object3D loadFromModel(String path) throws IOException {

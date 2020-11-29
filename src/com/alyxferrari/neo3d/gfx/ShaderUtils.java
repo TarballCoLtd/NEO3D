@@ -18,8 +18,8 @@ public class ShaderUtils {
 		glAttachShader(shader, vertexShd);
 		glAttachShader(shader, fragmentShd);
 		glLinkProgram(shader);
-		if (glGetProgrami(shader, GL_LINK_STATUS) == GL_FALSE) {
-			System.out.println("error with shader");
+		if (glGetProgrami(shader, GL_LINK_STATUS) != GL_TRUE) {
+			System.out.println("Shader compilation error:");
 			System.out.println(glGetProgramInfoLog(shader, glGetProgrami(shader, GL_INFO_LOG_LENGTH)));
 		}
 		glDeleteShader(vertexShd);
