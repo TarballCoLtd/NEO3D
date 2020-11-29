@@ -1,9 +1,13 @@
-#version 330 core
+#version 410 core
 #define SCALE 100
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
+layout (location = 2) in vec3 adjacentOne;
+layout (location = 3) in vec3 adjacentTwo;
 out vec3 fragPos;
 out vec4 outColor;
+out vec3 adjacent1;
+out vec3 adjacent2;
 uniform vec3 camPos;
 uniform vec2 viewAngles;
 uniform vec2 sinViewAngles;
@@ -39,4 +43,6 @@ void main() {
 	}
 	outColor = color;
 	fragPos = pos;
+	adjacent1 = adjacentOne;
+	adjacent2 = adjacentTwo;
 }

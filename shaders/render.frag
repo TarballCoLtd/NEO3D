@@ -1,9 +1,9 @@
-#version 330 core
-layout (location = 2) in vec3 adjacent1;
-layout (location = 3) in vec3 adjacent2;
-out vec4 Color;
+#version 410 core
+in vec3 adjacent1;
+in vec3 adjacent2;
 in vec3 fragPos;
 in vec4 outColor;
+out vec4 Color;
 uniform float lightXs[8];
 uniform float lightYs[8];
 uniform float lightZs[8];

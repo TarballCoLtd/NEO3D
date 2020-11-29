@@ -170,6 +170,7 @@ public class NEOEngine {
 		glVertexAttribPointer(2, 3, GL_FLOAT, false, 13 * SizeOf.FLOAT, 7 * SizeOf.FLOAT);
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(3, 3, GL_FLOAT, false, 13 * SizeOf.FLOAT, 10 * SizeOf.FLOAT);
+		glEnableVertexAttribArray(3);
 	}
 	/** Used internally. Converts a float ArrayList to a primitive float array.
 	 */
