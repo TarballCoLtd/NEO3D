@@ -103,7 +103,7 @@ public class NEOEngine {
 			glBindVertexArray(vao);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo);
 			setVertexAttributePointers();
-			environment.rebuildLights();
+			//environment.rebuildLights();
 			
 			int viewAnglesID = glGetUniformLocation(shader, "viewAngles");
 			int sinViewAnglesID = glGetUniformLocation(shader, "sinViewAngles");
